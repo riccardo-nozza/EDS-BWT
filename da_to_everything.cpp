@@ -1,0 +1,273 @@
+#include <iostream>
+#include <assert.h>
+#include <sdsl/bit_vectors.hpp>
+#include "Parameters.h"
+
+using namespace std;
+using namespace sdsl;
+
+dataTypeNChar freq[256];  //contains the distribution of the symbols. It is useful only for testing. It depends on the #characters
+dataTypeNChar** tableOcc; //contains the number of occurrences of each symbol
+dataTypedimAlpha alpha[SIZE_ALPHA]; //Corresponding between the alphabet, the piles and tableOcc
+dataTypedimAlpha sizeAlpha;  //number of the different symbols in the input texts
+dataTypedimAlpha *alphaInverse;  //Corresponding between alpha[i] and the symbol as char
+
+dataTypeNChar buildFreq(string fileName);
+int da_to_everything(string filename, dataTypeNChar BWT_length);
+
+
+
+int main(int argc, char *argv[]){
+	if(argc != 2 ) {
+		std::cerr << "usage: " << argv[0] << " input" << std::endl;
+		exit(1);
+	}
+	
+	if(strcmp(argv[1], "--help")==0 || strcmp(argv[1], "-help")==0 || strcmp(argv[1], "-h")==0) {
+		std::cerr << "usage: " << argv[0] << " input" << std::endl;
+		exit(1);
+	}
+	
+	string inputName = argv[1];	
+	dataTypeNChar BWT_length = buildFreq(inputName);
+	da_to_everything(inputName, BWT_length);
+	return 1;
+}
+
+
+
+int da_to_everything(string filename, dataTypeNChar BWT_length){
+
+	string ext = ".aux";
+
+	tableOcc = new dataTypeNChar*[sizeAlpha];
+	//Counting for each pile, es. $-pile, A-pile, C-pile, G-pile, N-pile, T-pile
+	for (dataTypedimAlpha j = 0 ; j < sizeAlpha; j++) {
+		tableOcc[j] = new dataTypeNChar[sizeAlpha];
+	}
+
+	for (dataTypedimAlpha j = 0 ; j < sizeAlpha; j++){
+		for (dataTypedimAlpha h = 0 ; h < sizeAlpha; h++){
+			tableOcc[j][h]=0;
+		}
+	}
+	
+
+	//apri il document array per leggerlo
+	string da_s = filename + ".fasta.4.da";
+	FILE* da = fopen(da_s.c_str(),"rb");
+	if (da == NULL) {
+		std::cerr << "Error opening \"" << da_s.c_str() << "\" file"<< std::endl;
+		exit (1);
+	}
+
+
+	//apri la ebwt per leggerla
+	//n.b. viene aperto il file che non contiene la coda di dollari relativi al simbolo di parola vuota, quindi avrà una lunghezza diversa dal document array.
+	string bwt_s = filename + ".ebwt";
+	FILE* bwt = fopen(bwt_s.c_str(),"r");
+	if (bwt == NULL) {
+		std::cerr << "Error opening \"" << bwt_s << "\" file"<< std::endl;
+		exit (1);		
+	}
+
+	FILE* OutFileBWT;
+	//FILE* dollarIndexOut;
+	string InfoFile_s = filename + "_info" + ext;
+	FILE* InfoFile = fopen(InfoFile_s.c_str(),"wb");
+	if (InfoFile == NULL){
+		std::cerr << "Error opening: " << InfoFile_s << std::endl;
+		exit (EXIT_FAILURE);
+	}
+	//Write BWT length, num. sequences and sizeAlpha
+	fwrite(&BWT_length, sizeof(dataTypeNChar), 1, InfoFile);
+	fwrite(&(freq[alphaInverse[0]]), sizeof(dataTypeNSeq), 1, InfoFile);
+	fwrite(&sizeAlpha, sizeof(dataTypedimAlpha), 1, InfoFile);
+	
+	//Write alphabet symbols
+	for(dataTypedimAlpha c = 0; c < sizeAlpha; c++){
+		fwrite(&(alphaInverse[c]), sizeof(dataTypedimAlpha), 1, InfoFile);
+	}
+	
+	size_t currentPile;
+
+    for (currentPile = 0 ; currentPile < sizeAlpha; ++currentPile) {
+            
+        assert(freq[alphaInverse[currentPile]] > 0);
+		bit_vector b;
+		b = bit_vector(freq[alphaInverse[currentPile]],0);
+		//vector<dataTypeNSeq> dollarIndex;
+
+
+
+        /*Open output file dollarIndex
+        string dollarIndex_s = filename + "_EOFpos_" + to_string(currentPile) + ext;
+        dollarIndexOut = fopen(dollarIndex_s.c_str(), "wb");
+        if (dollarIndexOut == NULL){
+            std::cerr << "Error opening: " << dollarIndex_s << std::endl;
+            exit (EXIT_FAILURE);
+        }*/
+
+		//Open output file partial bwt
+        string OutFileBWT_s = filename + "_bwt_" + to_string(currentPile) + ext;
+        OutFileBWT = fopen(OutFileBWT_s.c_str(), "wb");
+        if (OutFileBWT==NULL){
+            std::cerr << "Error opening: " << OutFileBWT_s << std::endl;
+            exit (EXIT_FAILURE);
+        }
+		
+
+
+		dataTypeNChar i;
+		dataTypeNChar pos = 1;
+		dataTypeNSeq* DAbuffer = new dataTypeNSeq[SIZEBUFFER];
+		dataTypedimAlpha* BWTbuffer = new dataTypedimAlpha[SIZEBUFFER];
+		dataTypeNChar numcharBWT=1;
+		dataTypeNChar numcharDA=1;
+		dataTypeNChar numWrite=1;
+
+		int toRead = SIZEBUFFER;
+		while(numcharBWT>0 and numcharDA>0){
+
+			if(freq[alphaInverse[currentPile]] - (pos - 1) < SIZEBUFFER){
+				toRead = freq[alphaInverse[currentPile]] - (pos - 1);
+			}
+
+			numcharBWT = fread(BWTbuffer,sizeof(dataTypedimAlpha),toRead,bwt);
+			numcharDA = fread(DAbuffer,sizeof(dataTypeNSeq),toRead,da);
+			assert(numcharBWT == numcharDA);
+
+			numWrite = fwrite(BWTbuffer, sizeof(uchar), toRead, OutFileBWT);
+			assert(numcharBWT == numWrite);
+
+			for (i=0; i<numcharBWT; i++){
+
+				if(BWTbuffer[i] == TERMINATE_CHAR){
+					b[pos-1] = 1;
+					//fwrite(&(DAbuffer[i]), sizeof(dataTypeNSeq), 1, dollarIndexOut);					
+					fwrite(&(DAbuffer[i]), sizeof(dataTypeNSeq), 1, InfoFile);					
+				}
+			
+				//counting the number of occurrences in BWT of the currentPile
+				tableOcc[(unsigned int)currentPile][alpha[(unsigned int)BWTbuffer[i]]]++;
+
+				pos++;
+			}
+		}
+
+		//fclose(dollarIndexOut);
+		fclose(OutFileBWT);
+
+		rrr_vector<> rrrb(b);
+		string bvName = filename + "_bv_" + to_string(currentPile) + ext;
+		store_to_file(rrrb,bvName);
+	}
+
+	
+	/*
+	string tableOccOut_s = filename + "_tableOcc" + ext;
+	FILE* tableOccOut = fopen(tableOccOut_s.c_str(),"wb");
+	if (tableOccOut == NULL){
+		std::cerr << "Error opening: " << tableOccOut_s << std::endl;
+		exit (EXIT_FAILURE);
+	}
+	*/
+
+	for (dataTypedimAlpha j = 0 ; j < sizeAlpha; j++){
+		for (dataTypedimAlpha h = 0 ; h < sizeAlpha; h++){
+			//fwrite(&(tableOcc[j][h]), sizeof(dataTypeNChar), 1, tableOccOut);
+			fwrite(&(tableOcc[j][h]), sizeof(dataTypeNChar), 1, InfoFile);
+		}
+	}
+	fclose(InfoFile);
+
+
+	std::cout << "\nPrint TableOcc:\n";
+    for (dataTypedimAlpha j = 0 ; j < sizeAlpha; j++) {
+        for (dataTypedimAlpha h = 0 ; h < sizeAlpha; h++)
+            std::cout << tableOcc[j][h] << "\t";
+		std::cout << std::endl;
+    }
+	
+	return 1;
+}
+
+
+
+
+
+
+
+
+
+
+dataTypeNChar buildFreq(string fileName) {
+   
+    //Open LCP and DA and BWT files
+    string fnBWT = string(fileName) + ".ebwt";
+   
+    FILE *InBWT = fopen(fnBWT.c_str(), "rb");
+    if (InBWT==NULL) {
+        std::cerr << "Error opening " << fnBWT << "!" << std::endl;
+        exit (EXIT_FAILURE);
+    }
+    fseek(InBWT, 0, SEEK_SET);
+
+	dataTypeNChar numEle=0;
+    
+	for (dataTypedimAlpha z = 0 ; z < SIZE_ALPHA-1; z++)
+		freq[z]=0;
+	freq[SIZE_ALPHA-1]=0;
+
+
+    //First reading in order to find the alphabet
+    std::cerr << "Find the alphabet by reading " << fnBWT << " file" << std::endl;
+
+
+
+	dataTypeNChar i;
+	dataTypedimAlpha* BWTbuffer = new dataTypedimAlpha[SIZEBUFFER];
+	dataTypeNChar numcharBWT=1;
+
+	while(numcharBWT>0){
+
+		numcharBWT = fread(BWTbuffer,sizeof(dataTypedimAlpha),SIZEBUFFER,InBWT);
+
+			for (i=0; i<numcharBWT; i++){
+				freq[(unsigned int)(BWTbuffer[i])]+=1;
+				numEle++;
+			}
+	}
+
+	if(freq[TERMINATE_CHAR]==0){
+		std::cerr << "ERROR: The end-marker must be " << TERMINATE_CHAR << endl;
+		std::cerr << "If you want to use a different end-marker, set the parameter TERMINATE_CHAR in Parameters.h" << endl;
+		exit(1);
+	}
+
+    
+	//set alpha and alphaInverse
+	alphaInverse = new dataTypedimAlpha[SIZE_ALPHA];
+	sizeAlpha=0;
+	for (dataTypedimAlpha i = 0; i < SIZE_ALPHA-1; ++i)
+		if (freq[i] > 0) {
+			alpha[i] = sizeAlpha;
+			alphaInverse[sizeAlpha]=i;
+			sizeAlpha++;
+		}
+	if (freq[SIZE_ALPHA-1] > 0) {
+		alpha[SIZE_ALPHA-1] = sizeAlpha;
+		alphaInverse[sizeAlpha]=SIZE_ALPHA-1;
+		sizeAlpha++;
+	}
+
+	std::cerr << "\nFrom .ebwt file:\n";
+	std::cerr << "\tNumber of symbols in the input file: " << numEle << "\n";
+	std::cerr << "\tSize alpha: " << (int)sizeAlpha << "\n";
+
+	return numEle;
+}
+
+
+
+

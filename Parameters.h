@@ -28,6 +28,8 @@
 
 #define TERMINATE_CHAR '#'     //it is the symbol used as "end of strings", it must be lexicographically smaller than all the letters of the alphabet
 #define TERMINATE_CHAR_LEN uchar(255)      //it is stored in cyc files, it is ignored by the algorithm, so it must not belong to the alphabet
+#define EMPTY_CHAR_EDS 'E'     //it is the symbol (if any) used to represent the empty word in the input eds. It will be converted in NULL_CHAR during the preprocessing 
+#define EMPTY_CHAR 'Z'     //it is the symbol intermally used as empty word. It must not appear in the input eds, and must be lexicographically greater than all the characters of the alphabet
 
 #define SIZE_ALPHA 256  
 

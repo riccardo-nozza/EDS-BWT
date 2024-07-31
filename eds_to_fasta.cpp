@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sdsl/bit_vectors.hpp>
+#include "Parameters.h"
 
 using namespace std;
 using namespace sdsl;
@@ -14,9 +15,8 @@ int main (int argc, char *argv[]){
 
 	char current;
 	char next;
-	char null_char_input='E';
-	char null_char='Z';	//must be lexicographically greater than every other in the input file.
-	char end_pos_char='#';
+	char null_char_input = EMPTY_CHAR_EDS;
+	char null_char=EMPTY_CHAR;	//must be lexicographically greater than every other letter in the input file.
 	bit_vector b;
 	int empty_counter=0;
 
@@ -34,7 +34,7 @@ int main (int argc, char *argv[]){
 		cerr<<edsName<<" contains "<<end_pos<<" characters\n";
 	}
 	else{
-		cerr << "Errore: impossibile aprire il file "<<edsName<<endl;
+		cerr << "Error: could not open file "<<edsName<<endl;
 		exit(1);
 	}
 	edsFileForLength.close();
@@ -133,26 +133,25 @@ int main (int argc, char *argv[]){
 		return 0;
 	}
 
-cerr<<"\nfine lettura"<<endl;
+	cerr<<"\nFinished reading"<<endl;
 
 
 	b.resize(i);
-
-
 	string bvName = outputName + ".bitvector";
 	store_to_file(b,bvName);
 
-	string empty_name = outputName+".empty.sh";
-	ofstream fix_bwt_command_txt (empty_name);
-	if (fix_bwt_command_txt.is_open()){
-		fix_bwt_command_txt << "#!/bin/bash\n\n";
-		fix_bwt_command_txt << "head -c " << (chars + i - empty_counter) << " " << outputName << ".fasta.bwt ";
-		fix_bwt_command_txt << "| awk 'BEGIN {ORS=\"\"} {gsub(/" << null_char <<"/,\"" << end_pos_char << "\")}1' ";	//ORS="" make the output on a single line, not generating new unexpected characters in the bwt.
-		fix_bwt_command_txt	<< "> " << outputName << ".ebwt";
-		fix_bwt_command_txt.close();
+
+	dataTypeNChar bwt_length = chars + i;
+	string empty_name = outputName+".empty.info";
+	FILE* empty_number_file = fopen(empty_name.c_str(),"wb");
+	if (empty_number_file != NULL){
+		fwrite(&bwt_length, sizeof(dataTypeNChar), 1, empty_number_file);
+		fwrite(&empty_counter, sizeof(dataTypeNChar), 1, empty_number_file);
+	fclose(empty_number_file);
 	}
 	else{
-		cerr << "Errore: impossibile aprire il file "<<empty_name<<endl;
+		cerr << "Error: could not open file "<<empty_name<<endl;
+		return 0;
 	}
 
 	

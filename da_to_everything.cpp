@@ -14,6 +14,7 @@ dataTypedimAlpha *alphaInverse;  //Corresponding between alpha[i] and the symbol
 
 dataTypeNChar buildFreq(string fileName);
 int da_to_everything(string filename, dataTypeNChar BWT_length);
+int remove_empty_symbols(string inputName);
 
 
 
@@ -29,6 +30,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	string inputName = argv[1];	
+	remove_empty_symbols(inputName);
 	dataTypeNChar BWT_length = buildFreq(inputName);
 	da_to_everything(inputName, BWT_length);
 	return 1;
@@ -189,6 +191,29 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
 		std::cout << std::endl;
     }
 	
+	
+	
+	//Remove the auxiliary file .ebwt
+	string ebwtFileName = filename + ".ebwt";
+    int status = remove(ebwtFileName);
+    if (status != 0) {
+        cerr << "Error deleting file" << ebwtFileName << endl;
+    }
+
+	//Remove the auxiliary file .fasta
+	string fastaFileName = filename + ".fasta";
+    status = remove(fastaFileName);
+    if (status != 0) {
+        cerr << "Error deleting file" << fastaFileName << endl;
+    }
+
+	//Remove the auxiliary file .fasta.4.da
+    status = remove(da_s);
+    if (status != 0) {
+        cerr << "Error deleting file" << da_s << endl;
+    }
+
+
 	return 1;
 }
 
@@ -271,3 +296,95 @@ dataTypeNChar buildFreq(string fileName) {
 
 
 
+int remove_empty_symbols(string fileName){
+
+	dataTypeNChar bwt_length;
+	dataTypeNChar empty_number;
+
+	//Open the file containing the number of symbols in the bwt and the number of empty-word symbols contained within
+	string emptyName = fileName+".empty.info";
+	FILE* emptyFile = fopen(emptyName.c_str(),"rb");
+	if (emptyFile == NULL) {
+		std::cerr << "Error opening \"" << emptyName << "\" file"<< std::endl;
+		exit (1);
+	}
+	dataTypeNChar* empty_info = new dataTypeNChar[2];
+	if(fread(empty_info,sizeof(dataTypeNChar),2,emptyFile) == 2){
+		bwt_length = empty_info[0];
+		empty_number = empty_info[1];
+	}
+	else{
+		std::cerr << "Error reading \"" << emptyName << "\" file. File is smaller than expected"<< std::endl;
+		exit (1);
+	}
+
+	fclose(emptyFile);
+
+	//Compute the number of characters of the bwt to be kept
+	dataTypeNChar toKeep = bwt_length - empty_number;
+
+
+    string bwtFileName = string(fileName) + ".fasta.bwt";
+    FILE *bwtFile = fopen(bwtFileName.c_str(), "r");
+	if (bwtFile == NULL) {
+		std::cerr << "Error opening \"" << bwtFileName << "\" file"<< std::endl;
+		exit (1);
+	}
+
+    string ebwtFileName = string(fileName) + ".ebwt";
+    FILE *ebwtFile = fopen(ebwtFileName.c_str(), "w");
+	if (ebwtFile == NULL) {
+		std::cerr << "Error opening \"" << ebwtFileName << "\" file"<< std::endl;
+		exit (1);
+	}
+
+
+	dataTypeNChar i;
+	dataTypeNChar totalCharRead=0;
+	dataTypedimAlpha* BWTbuffer = new dataTypedimAlpha[SIZEBUFFER];
+	dataTypeNChar numcharBWT=1;
+	char terminate_char=TERMINATE_CHAR;
+
+	while(numcharBWT>0){
+
+		//read the bwt in chunks of SIZEBUFFER
+		numcharBWT = fread(BWTbuffer,sizeof(dataTypedimAlpha),SIZEBUFFER,bwtFile);
+
+		for (i=0; i<numcharBWT; i++){
+
+			//stop reading if reaching the symbols corresponding to the (artificially added) EMPTY_CHARs
+			if (totalCharRead < toKeep){
+
+				//if the current character is the EMPTY_CHAR, change it to the end-of-string character, otherwise leave it unchanged
+				if (BWTbuffer[i] == EMPTY_CHAR){
+					fwrite(&(terminate_char), sizeof(dataTypedimAlpha), 1, ebwtFile);
+				}
+				else{
+					fwrite(&(BWTbuffer[i]), sizeof(dataTypedimAlpha), 1, ebwtFile);
+				}
+				totalCharRead++;
+			}
+			else{
+				numcharBWT=0;
+			}
+		}
+	}
+	
+	fclose(bwtFile);
+	fclose(ebwtFile);
+
+	//Remove the auxiliary file .empty.info
+    int status = remove(emptyName);
+    if (status != 0) {
+        cerr << "Error deleting file" << emptyName << endl;
+    }
+
+	//Remove the auxiliary file .fasta.bwt
+    status = remove(bwtFileName);
+    if (status != 0) {
+        cerr << "Error deleting file" << bwtFileName << endl;
+    }
+
+
+	return 1;
+}

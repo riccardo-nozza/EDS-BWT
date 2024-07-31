@@ -22,7 +22,7 @@ CPPFLAGS = -Wall -ansi -pedantic -g -O3 -std=c++11 $(DEFINES)
 CPPFLAGS += -I$(SDSL_INC) 
 LDLIBS = -L$(SDSL_LIB) $(CPPFLAGS) -lsdsl -ldivsufsort -ldivsufsort64 -ldl
 
-all: mainEDS-BWT converter eds2fasta
+all: mainEDS-BWT converter eds2fasta stringCheck
 
 mainEDS-BWT_obs = mainEDS-BWT.o EDSBWT.o Sorting.o malloc_count/malloc_count.o
 mainEDS-BWT: $(mainEDS-BWT_obs)
@@ -35,7 +35,11 @@ converter: $(converter_obs)
 eds2fasta_obs = eds_to_fasta.o
 eds2fasta: $(eds2fasta_obs)
 	$(CC) -o eds_to_fasta $(eds2fasta_obs) $(LDLIBS)  
-	
+
+stringCheck_obs = stringCheck.o
+stringCheck: $(stringCheck_obs)
+	$(CC) -o stringCheck $(stringCheck_obs) $(LDLIBS)  
+
 clean:
 	rm -f core *.o *~ EDS-BWT da_to_everything eds_to_fasta
 

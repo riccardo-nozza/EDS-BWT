@@ -806,7 +806,9 @@ int EDSBWT::updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE 
 	//dataTypeNChar * counters = new dataTypeNChar[sizeAlpha];  //it counts the number of each symbol into the i-Pile-BWT
 				
 				dataTypeNChar numBlock = 0;
+				#if DEBUG == 1
 				uchar foundSymbol = '\0';  //here, it is not useful	
+				#endif
 				dataTypeNChar numberRead=0;
 				
 				//cont is the number of symbols already read!

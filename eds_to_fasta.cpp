@@ -54,6 +54,15 @@ int main (int argc, char *argv[]){
 	if (edsFile.is_open() && lista.is_open()){
 
 		edsFile.get(current);
+
+		if(current==EMPTY_CHAR){
+			cerr << "\n\nError: the input contains character " << EMPTY_CHAR << ", which is used by this tool to represent an empty string. Please change EMPTY" << "_CHAR in Parameters.h or change the character in your input.\n\n\n";
+			edsFile.close();
+			lista.close();
+			remove(newName);
+			exit(1);
+		}
+
 		next=edsFile.peek();
 		if(current=='{'){
 			b[i]=1;
@@ -61,7 +70,6 @@ int main (int argc, char *argv[]){
 //			lista<<">"<<k<<endl;
 			lista<<">1"<<endl;
 			if (next == ','){
-				//cout<<"Ho trovato la parola vuota, scrivo:"<<null_char<<endl;
 				lista<<null_char;
 				empty_counter++;
 				chars++;
@@ -74,6 +82,15 @@ int main (int argc, char *argv[]){
 
 
 		while (edsFile.get(current)){
+
+			if(current==EMPTY_CHAR){
+				cerr << "\n\nError: the input contains character " << EMPTY_CHAR << ", which is used by this tool to represent an empty string. Please change EMPTY" << "_CHAR in Parameters.h or change the character in your input.\n\n\n";
+				edsFile.close();
+				lista.close();
+				remove(newName);
+				exit(1);
+			}
+
 			if(current=='{'){
 //				lista<<endl<<">"<<k<<endl;
 				lista<<endl<<">1"<<endl;
@@ -81,7 +98,6 @@ int main (int argc, char *argv[]){
 				i=i+1;
 				next=edsFile.peek();
 				if (next == ','){
-					//cerr<<"Ho trovato la parola vuota, scrivo:"<<null_char<<endl;
 					lista<<null_char;
 					empty_counter++;
 					chars++;
@@ -107,18 +123,13 @@ int main (int argc, char *argv[]){
 					empty_counter++;
 					chars++;
 				}
-				//if(i%1000000 == 0){
-				//	cerr<<i/1000000<<" million words read"<<"\r";
-				//}
 			}
 			else if(current == null_char_input){
-				//cerr<<"Ho trovato la parola vuota, scrivo:"<<null_char<<endl;
 				lista<<null_char;
 				empty_counter++;
 				chars++;
 			}
 			else {
-//				lista<<toupper(current);
 				lista<<current;
 //				l_tmp++;
 				chars++;
@@ -129,7 +140,7 @@ int main (int argc, char *argv[]){
 		lista.close();
 	}
 	else {
-		cerr << "Error: open file: " << edsName << " or "<< newName << endl;
+		cerr << "Error: could not open file " << edsName << " or "<< newName << endl;
 		return 0;
 	}
 

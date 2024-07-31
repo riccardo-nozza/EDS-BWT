@@ -35,40 +35,40 @@ int stringCheck (string originalName, string newName){
 			}
 		}
 		else{
-			cerr << "Error: the input contains character " << EMPTY_CHAR << ", which is used by this tool to represent an empty string. Please change EMPTY" << "_CHAR in Parameters.h or change the character in your input." << endl;
+			cerr << "\n\nError: the input contains character " << EMPTY_CHAR << ", which is used by this tool to represent an empty string. Please change EMPTY" << "_CHAR in Parameters.h or change the character in your input.\n\n\n";
 			exit(1);
 		}
 
 		//check subsequent characters
 		while (originalFile.get(current)){
-			if(current!=EMPTY_CHAR){
-				next=originalFile.peek();
-				if(current=='}' && next!='{' && next!=EOF){
-					lista<<current<<'{';
-				}
-				else if(current!='}' && next=='{'){
-					lista<<current<<'}';
-				}
-				else if(current=='<'){
+
+			if(current==EMPTY_CHAR){
+				cerr << "\n\nError: the input contains character " << EMPTY_CHAR << ", which is used by this tool to represent an empty string. Please change EMPTY" << "_CHAR in Parameters.h or change the character in your input.\n\n\n";
+				exit(1);
+			}
+
+			next=originalFile.peek();
+			if(current=='}' && next!='{' && next!=EOF){
+				lista<<current<<'{';
+			}
+			else if(current!='}' && next=='{'){
+				lista<<current<<'}';
+			}
+			else if(current=='<'){
+				originalFile.get(current);
+				while(current!='>'){
 					originalFile.get(current);
-					while(current!='>'){
-						originalFile.get(current);
-					}
-					next=originalFile.peek();
-					if(next=='{'){
-						lista<<'}';
-					}
 				}
-				else if(next==EOF && current!='}'){
-					lista<<current<<'}';
-				}
-				else {
-					lista<<current;
+				next=originalFile.peek();
+				if(next=='{'){
+					lista<<'}';
 				}
 			}
-			else{
-				cerr << "Error: the input contains character " << EMPTY_CHAR << ", which is used by this tool to represent an empty string. Please change EMPTY" << "_CHAR in Parameters.h or change the character in your input." << endl;
-				exit(1);
+			else if(next==EOF && current!='}'){
+				lista<<current<<'}';
+			}
+			else {
+				lista<<current;
 			}
 		}
 

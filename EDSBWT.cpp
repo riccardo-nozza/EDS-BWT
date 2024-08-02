@@ -182,7 +182,7 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 		std::ofstream searchOutput;
 		searchOutput.open(searchOutput_s,ios::out);
 		if(searchOutput.is_open()){
-			searchOutput << "Pattern_#" << "\t" << "word_index" << "\t" << "segment_index" << "\t" << "WordInSeg_index" << "\t" << "position_in_word\n";
+//			searchOutput << "Pattern_#" << "\t" << "word_index" << "\t" << "segment_index" << "\t" << "WordInSeg_index" << "\t" << "position_in_string\n";
 			searchOutput << "#Pat" << "\t" << "$_i" << "\t" << "D[i]" << "\t" << "S_j" << "\t" << "S_j[r]\n";
 			searchOutput.close();
 		}

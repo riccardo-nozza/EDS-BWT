@@ -192,13 +192,14 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
     }
 	
 	
-	
-	//Remove the auxiliary file .ebwt
-	string ebwtFileName = filename + ".ebwt";
-    int status = remove(ebwtFileName);
-    if (status != 0) {
-        cerr << "Error deleting file" << ebwtFileName << endl;
-    }
+	#if KEEPEBWT == 0
+		//Remove the auxiliary file .ebwt
+		string ebwtFileName = filename + ".ebwt";
+		int status = remove(ebwtFileName);
+		if (status != 0) {
+			cerr << "Error deleting file" << ebwtFileName << endl;
+		}
+	# endif
 
 	//Remove the auxiliary file .fasta
 	string fastaFileName = filename + ".fasta";

@@ -10,28 +10,38 @@ An *elastic degenerate string* (eds) is the concatenation of a collection of str
 The collections of strings between curly brackets are called *degenerate symbols*, or *segments*.
 
 
+## Installation
+
 ## Install
 
-You need to install EDS-BWT and gsufsort for the tool to function
 ```sh
 git clone --recursive https://github.com/giovannarosone/EDS-BWT.git 
 cd EDS-BWT
-make
+```
+
+## Requirements
+
+After installing EDS-BWT, install [gsufsort](https://github.com/felipelouza/gsufsort)
+
+```sh
 git clone https://github.com/felipelouza/gsufsort.git
 cd gsufsort
+make
+cd ..
+```
+
+You also need to install the [sdsl library](https://github.com/simongog/sdsl-lite) and specify the path of SDSL/include and SDSL/lib in the parameters SDSL_INC and SDSL_LIB of file makefile.
+
+
+## Compile
+
+```sh
 make
 ```
 
-You also need to install the [sdsl library](https://github.com/simongog/sdsl-lite), and specify the path of SDSL/include and SDSL/lib in the parameters SDSL_INC and SDSL_LIB of file makefile.
-
 If you want the tool to just search for the number of occurrences of a pattern, without finding the positions, then compile with option RECOVERBW=0, as follows
 ```sh
-git clone --recursive https://github.com/giovannarosone/EDS-BWT.git 
-cd EDS-BWT
 make RECOVERBW=0
-git clone https://github.com/felipelouza/gsufsort.git
-cd gsufsort
-make
 ```
 
 

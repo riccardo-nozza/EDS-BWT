@@ -31,7 +31,7 @@
 using std::cout;
 using std::endl;
 
-#include "EDSBWT.hpp"
+#include "EDSBWTsearch.hpp"
 #include "Parameters.h"
 
 using namespace std;

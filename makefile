@@ -24,9 +24,9 @@ LDLIBS = -L$(SDSL_LIB) $(CPPFLAGS) -lsdsl -ldivsufsort -ldivsufsort64 -ldl
 
 all: mainEDS-BWT converter eds2fasta stringCheck
 
-mainEDS-BWT_obs = mainEDS-BWT.o EDSBWT.o Sorting.o malloc_count/malloc_count.o
+mainEDS-BWT_obs = mainEDS-BWT.o EDSBWTsearch.o Sorting.o malloc_count/malloc_count.o
 mainEDS-BWT: $(mainEDS-BWT_obs)
-	$(CC) -o EDS-BWT $(mainEDS-BWT_obs) $(LDLIBS)  
+	$(CC) -o EDSBWTsearch $(mainEDS-BWT_obs) $(LDLIBS)  
 
 converter_obs = da_to_everything.o
 converter: $(converter_obs)
@@ -41,7 +41,7 @@ stringCheck: $(stringCheck_obs)
 	$(CC) -o stringCheck $(stringCheck_obs) $(LDLIBS)  
 
 clean:
-	rm -f core *.o *~ EDS-BWT da_to_everything eds_to_fasta
+	rm -f core *.o *~ EDSBWTsearch da_to_everything eds_to_fasta stringCheck
 
 depend:
 	$(CC)  -MM *.cpp *.c > dependencies.mk

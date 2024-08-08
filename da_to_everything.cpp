@@ -191,11 +191,11 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
 		std::cout << std::endl;
     }
 	
-	
+	int status;
 	#if KEEPEBWT == 0
 		//Remove the auxiliary file .ebwt
 		string ebwtFileName = filename + ".ebwt";
-		int status = remove(ebwtFileName);
+		status = remove(ebwtFileName);
 		if (status != 0) {
 			cerr << "Error deleting file" << ebwtFileName << endl;
 		}

@@ -18,7 +18,7 @@
  **
  **/
  
-#include "EDSBWT.hpp"
+#include "EDSBWTsearch.hpp"
 #include "Sorting.h"
 #include "Parameters.h"
 
@@ -722,7 +722,7 @@ int EDSBWT::backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq 
 				res = res + intervalLength;
 			}
 		}
-		cout << "Found at least " << res << " occurrences of pattern number " << n_kmer << endl;
+		cout << "Found " << res << " starting positions of occurrences of pattern number " << n_kmer << endl;
 //	#else
 //		if(!vectRangeOtherPile.empty())
 //			res=1;

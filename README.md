@@ -26,7 +26,7 @@ After installing EDS-BWT, install [gsufsort](https://github.com/felipelouza/gsuf
 ```sh
 git clone https://github.com/felipelouza/gsufsort.git
 cd gsufsort
-make
+make TERMINATOR=0 DNA=1
 cd ..
 ```
 
@@ -53,12 +53,12 @@ make RECOVERBW=0
 To compute the EDS-BWT of an elastic degenerate string written in file input.eds:
 
 ```sh
-./eds_to_ebwt.sh input
+./EDS-BWTransform.sh input
 ```
 
 Afterwards, to search one or more patterns, contained in file kmers:
 ```sh
-EDS-BWT input kmers
+EDSBWTsearch input kmers
 ```
 
 
@@ -103,15 +103,14 @@ If your input does contain this character, please change the parameter EMPTY_CHA
 
 ### Patterns
 
-The patterns file is a text file where each pattern is in a different line, with no empty lines. For example
+The patterns file is a text file where each pattern is in a different line, ending with UNIX end-of-line markers (LF), as opposed to Windows ones (CR+LF).
+Empty lines are not allowed. Example:
 
 ```sh
 TATT
 ACT
 TTAT
 ```
-
-Note that UNIX end-of-line markers (LF) should be used, as opposed for example to Windows ones (CR+LF).
 
 
 ## Output
@@ -176,8 +175,8 @@ is
 
 It can be checked using the tool with the following commands:
 ```sh
-./eds_to_ebwt.sh test/test/test
-./EDS-BWT test/test/test test/test/kmers.txt
+./EDS-BWTransform.sh sample/test/test
+./EDSBWTsearch sample/test/test sample/test/kmers.txt
 ```
 
 

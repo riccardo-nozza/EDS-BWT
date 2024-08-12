@@ -1,5 +1,5 @@
 # EDS-BWT
-This tool computes the Burrows-Wheeler transform of an elastic-degenerate string, called EDSBWT, and can search patterns on it.
+This tool computes the Burrows-Wheeler transform of an elastic-degenerate string, called EDS-BWT, and can search patterns on it.
 
 An *elastic degenerate string* (eds) is the concatenation of a collection of strings, as in the following example:
 

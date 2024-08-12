@@ -29,6 +29,7 @@ make TERMINATOR=0 DNA=1
 cd ..
 ```
 
+You can specify the path where gsufsort is installed in variable GSUFPATH of file EDS-BWTransform.sh.
 You also need to install the [sdsl library](https://github.com/simongog/sdsl-lite) and specify the path of SDSL/include and SDSL/lib in the parameters SDSL_INC and SDSL_LIB of file makefile.
 
 
@@ -58,7 +59,7 @@ where output is used as the base name of the output files.
 
 Afterwards, to search one or more patterns, contained in file patterns:
 ```sh
-EDSBWTsearch output patterns
+./EDSBWTsearch output patterns
 ```
 
 
@@ -84,7 +85,7 @@ ATTGCT{CTA,TA,A}CTACGGACT{A,}CTGT
 ```
 then please execute
 ```sh
-stringCheck input.txt output
+./stringCheck input.txt output
 ```
 
 This produces the file output.eds, which will have the brackets as required.

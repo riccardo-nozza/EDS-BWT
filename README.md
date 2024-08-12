@@ -20,7 +20,7 @@ cd EDS-BWT
 
 ### Requirements
 
-After installing EDS-BWT, install [gsufsort](https://github.com/felipelouza/gsufsort)
+After dowloading EDS-BWT, install [gsufsort](https://github.com/felipelouza/gsufsort)
 
 ```sh
 git clone https://github.com/felipelouza/gsufsort.git
@@ -32,7 +32,7 @@ cd ..
 You also need to install the [sdsl library](https://github.com/simongog/sdsl-lite) and specify the path of SDSL/include and SDSL/lib in the parameters SDSL_INC and SDSL_LIB of file makefile.
 
 
-## Compile
+### Compile
 
 ```sh
 make
@@ -58,7 +58,7 @@ where output is used as the base name of the output files.
 
 Afterwards, to search one or more patterns, contained in file patterns:
 ```sh
-EDSBWTsearch input patterns
+EDSBWTsearch output patterns
 ```
 
 

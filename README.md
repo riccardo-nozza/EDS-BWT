@@ -10,7 +10,6 @@ An *elastic degenerate string* (eds) is the concatenation of a collection of str
 The collections of strings between curly brackets are called *degenerate symbols*, or *segments*.
 
 
-## Installation
 
 ## Install
 

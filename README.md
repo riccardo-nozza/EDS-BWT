@@ -18,7 +18,7 @@ git clone --recursive https://github.com/giovannarosone/EDS-BWT.git
 cd EDS-BWT
 ```
 
-## Requirements
+### Requirements
 
 After installing EDS-BWT, install [gsufsort](https://github.com/felipelouza/gsufsort)
 
@@ -52,20 +52,13 @@ make RECOVERBW=0
 To compute the EDS-BWT of an elastic degenerate string written in file input.eds:
 
 ```sh
-./EDS-BWTransform.sh input
+./EDS-BWTransform.sh input output
 ```
+where output is used as the base name of the output files.
 
-Afterwards, to search one or more patterns, contained in file kmers:
+Afterwards, to search one or more patterns, contained in file patterns:
 ```sh
-EDSBWTsearch input kmers
-```
-
-
-If you want to choose the name of the output files that encode the EDS-BWT, execute the following istructions instead:
-```sh
-./eds_to_fasta input.eds output
-gsufsort/gsufsort output.fasta --da --bwt --output output.fasta
-./da_to_everything output
+EDSBWTsearch input patterns
 ```
 
 

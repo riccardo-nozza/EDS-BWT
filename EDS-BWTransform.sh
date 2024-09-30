@@ -8,7 +8,7 @@ OUTPUT=$2
 
 ./eds_to_fasta $NAMEFILE.eds $OUTPUT
 
-$GSUFPATH/gsufsort $NAMEFILE.fasta --da --bwt --output $OUTPUT.fasta
+$GSUFPATH/gsufsort $OUTPUT --da --bwt --output $OUTPUT.fasta
 
 ./da_to_everything $OUTPUT
 

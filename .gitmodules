@@ -1,0 +1,3 @@
+[submodule "submodules/Move-r"]
+	path = submodules/Move-r
+	url = git@github.com:LukasNalbach/Move-r.git

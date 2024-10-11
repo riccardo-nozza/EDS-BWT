@@ -42,6 +42,8 @@ struct IntervalElement{
 	~rangeElement() {};
 	dataTypeNChar startPosN;
 	dataTypeNChar endPosN;
+	dataTypeNChar startPosNII; //Input interval start pos
+	dataTypeNChar endPosNII; //Input interval end pos
 	};
 	#if RECOVERBW == 1
 	struct __attribute__((__packed__)) rangeElementBW {

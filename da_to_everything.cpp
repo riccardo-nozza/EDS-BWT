@@ -3,6 +3,20 @@
 #include <sdsl/bit_vectors.hpp>
 #include "Parameters.h"
 
+
+/*#include <move_r/misc/utils.hpp>
+#include <move_r/data_structures/move_data_structure/move_data_structure.hpp>
+#include <move_r/data_structures/move_data_structure/move_data_structure_l_.hpp>
+
+/*
+#include "Move-r/include/move_r/misc/utils.hpp"
+#include "Move-r/include/move_r/data_structures/move_data_structure/move_data_structure.hpp"
+*/
+//#include <move_r/misc/utils.hpp>
+//#include <move_r/data_structures/move_data_structure/move_data_structure.hpp>
+
+
+
 using namespace std;
 using namespace sdsl;
 
@@ -11,10 +25,13 @@ dataTypeNChar** tableOcc; //contains the number of occurrences of each symbol
 dataTypedimAlpha alpha[SIZE_ALPHA]; //Corresponding between the alphabet, the piles and tableOcc
 dataTypedimAlpha sizeAlpha;  //number of the different symbols in the input texts
 dataTypedimAlpha *alphaInverse;  //Corresponding between alpha[i] and the symbol as char
+dataTypeNChar *StartPosArray;  //Char Starting positions, useful to build I_LF.
 
 dataTypeNChar buildFreq(string fileName);
 int da_to_everything(string filename, dataTypeNChar BWT_length);
 int remove_empty_symbols(string inputName);
+int build_ilf(string fileName);
+int get_char_start_pos();
 
 
 
@@ -33,7 +50,74 @@ int main(int argc, char *argv[]){
 	remove_empty_symbols(inputName);
 	dataTypeNChar BWT_length = buildFreq(inputName);
 	da_to_everything(inputName, BWT_length);
+	build_ilf(inputName);
+
 	return 1;
+}
+
+int get_char_start_pos(){
+	
+	StartPosArray = new dataTypeNChar[sizeAlpha];
+	StartPosArray[0]=0;
+
+	for (dataTypedimAlpha j = 0 ; j < sizeAlpha-1; j++){
+		StartPosArray[j+1]=StartPosArray[j];
+		for (dataTypedimAlpha h = 0 ; h < sizeAlpha; h++){
+			StartPosArray[j+1]+=tableOcc[j][h];
+		}
+	}
+
+	return 0;
+}
+
+//CHECK: molto inefficace ma deve funzionare per ora
+int build_ilf(string fileName){
+
+	string runsAuxFileName = string(fileName) + "_runs.aux";
+	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "r");
+	if (runsAuxFile == NULL) {
+		std::cerr << "Error opening \"" << runsAuxFile << "\" file"<< std::endl;
+		exit (1);
+	}
+
+	string runsFileName = string(fileName) + "_runs.txt";
+	FILE *runsFile = fopen(runsFileName.c_str(), "w");
+	if (runsFile == NULL) {
+		std::cerr << "Error opening \"" << runsFile << "\" file"<< std::endl;
+		exit (1);
+	}
+
+	get_char_start_pos();
+
+	int initPos;
+    dataTypedimAlpha let;
+
+
+	if(fscanf(runsAuxFile, "%d,%c\n", &initPos, &let) == EOF){
+		std::cout<<"File "<<runsAuxFileName<<" vuoto"<<std::endl;
+		exit(1);//scrivere su file solo il primo run	
+	}
+
+	fprintf(runsFile, "%d,%d\n", initPos, StartPosArray[(unsigned int)alpha[(unsigned int)let]]);
+
+	int initPos2;
+    dataTypedimAlpha let2;
+
+	int run_len;
+
+    while (fscanf(runsAuxFile, "%d,%c\n", &initPos2, &let2) != EOF) {
+		run_len=initPos2-initPos;
+		StartPosArray[(unsigned int)alpha[(unsigned int)let]]+=run_len;
+		initPos=initPos2;
+		let=let2;
+		fprintf(runsFile, "%d,%d\n", initPos, StartPosArray[(unsigned int)alpha[(unsigned int)let]]);
+		
+    }
+
+    fclose(runsFile);
+	fclose(runsAuxFile);
+
+	return 0;
 }
 
 
@@ -339,12 +423,20 @@ int remove_empty_symbols(string fileName){
 		exit (1);
 	}
 
+	string runsAuxFileName = string(fileName) + "_runs.aux";
+	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "w");
+	if (runsAuxFile == NULL) {
+		std::cerr << "Error opening \"" << runsAuxFile << "\" file"<< std::endl;
+		exit (1);
+	}
+
 
 	dataTypeNChar i;
 	dataTypeNChar totalCharRead=0;
 	dataTypedimAlpha* BWTbuffer = new dataTypedimAlpha[SIZEBUFFER];
 	dataTypeNChar numcharBWT=1;
 	char terminate_char=TERMINATE_CHAR;
+	uchar prev_char=TERMINATE_CHAR;
 
 	while(numcharBWT>0){
 
@@ -355,6 +447,12 @@ int remove_empty_symbols(string fileName){
 
 			//stop reading if reaching the symbols corresponding to the (artificially added) EMPTY_CHARs
 			if (totalCharRead < toKeep){
+
+				if (prev_char!=BWTbuffer[i] || 	BWTbuffer[i]==EMPTY_CHAR || BWTbuffer[i]==TERMINATE_CHAR){//if char different from prv, there's a new run
+				    fprintf(runsAuxFile, "%d,%c\n", i, BWTbuffer[i]); //CHECK: aggiungere 1? Non penso ma occhio
+			
+				}
+				prev_char=BWTbuffer[i];
 
 				//if the current character is the EMPTY_CHAR, change it to the end-of-string character, otherwise leave it unchanged
 				if (BWTbuffer[i] == EMPTY_CHAR){
@@ -370,7 +468,10 @@ int remove_empty_symbols(string fileName){
 			}
 		}
 	}
+
+	//I can actually delete file runs.aux, not needed anymore
 	
+	fclose(runsAuxFile);
 	fclose(bwtFile);
 	fclose(ebwtFile);
 

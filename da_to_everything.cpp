@@ -8,11 +8,9 @@
 #include <move_r/data_structures/move_data_structure/move_data_structure.hpp>
 #include <move_r/data_structures/move_data_structure/move_data_structure_l_.hpp>
 
-/*
 #include "Move-r/include/move_r/misc/utils.hpp"
 #include "Move-r/include/move_r/data_structures/move_data_structure/move_data_structure.hpp"
 */
-//#include <move_r/misc/utils.hpp>
 //#include <move_r/data_structures/move_data_structure/move_data_structure.hpp>
 
 
@@ -25,6 +23,7 @@ dataTypeNChar** tableOcc; //contains the number of occurrences of each symbol
 dataTypedimAlpha alpha[SIZE_ALPHA]; //Corresponding between the alphabet, the piles and tableOcc
 dataTypedimAlpha sizeAlpha;  //number of the different symbols in the input texts
 dataTypedimAlpha *alphaInverse;  //Corresponding between alpha[i] and the symbol as char
+
 dataTypeNChar *StartPosArray;  //Char Starting positions, useful to build I_LF.
 
 dataTypeNChar buildFreq(string fileName);

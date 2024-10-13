@@ -13,10 +13,10 @@ endif()
 
 add_definitions(-DRECOVERBW=${RECOVERBW} -DOMP=${OMP} -DFASTQ=${FASTQ})
 
-include_directories(/home/riccardo/include 
+include_directories(/home/include 
 #submodules/Move-r/include
 )
-link_directories(/home/riccardo/lib
+link_directories(/home/lib
 #submodules/Move-r
 )
 

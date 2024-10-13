@@ -22,7 +22,7 @@ using i_sym_t = constexpr_switch_t<
     >;
 std::vector<std::pair<uint32_t,uint32_t>> I_LF;
 using rsl_t = rank_select_support<i_sym_t,uint32_t,true,true>; // type of RS_L'
-rsl_t _RS_L_;
+//rsl_t _RS_L_;
 
 
 int main(int argc, char *argv[]){
@@ -40,6 +40,18 @@ int main(int argc, char *argv[]){
 	
 	string inputName = argv[1];	
 
+	string ebwtFileName = string(inputName) + ".ebwt";
+	FILE *ebwtFile = fopen(ebwtFileName.c_str(), "r");
+	if (ebwtFile == NULL) {
+		std::cerr << "Error opening \"" << ebwtFile << "\" file"<< std::endl;
+		exit (1);
+	}
+	fseek(ebwtFile, 0L, SEEK_END);
+	int n=ftell(ebwtFile); //retrieve text length n
+
+	fclose(ebwtFile);
+
+
 	string runsFileName = string(inputName) + "_runs.txt";
 	FILE *runsFile = fopen(runsFileName.c_str(), "r");
 	if (runsFile == NULL) {
@@ -50,7 +62,7 @@ int main(int argc, char *argv[]){
 	int initPos;
 	int LFPos;
 	int I_LF_index=0;
-	no_init_resize(I_LF,33);
+	no_init_resize(I_LF,n);
 
 	while (fscanf(runsFile, "%d,%d\n", &initPos, &LFPos) != EOF) {
 		std::cout<<initPos<<" "<<LFPos<<std::endl;
@@ -62,7 +74,10 @@ int main(int argc, char *argv[]){
             for each c in [0..255] 
             C[i_p][run_sym(i_p,i)] += run_len(i_p,i);*/
     }
-	 move_data_structure_l_<> M_LF(I_LF,33,{//33 DA CAMBIARE E METTERE IN BASE ALLA LUNGHEZZA DI T
+	fclose(runsFile);
+
+
+	 move_data_structure_l_<> M_LF(I_LF,n,{
         .num_threads = 4, .a = 2
     }, 8);
 	//: (uint8_t)(std::ceil(std::log2(idx.sigma+1)/(double)8)*8) se non usiamo un byte alphabet
@@ -94,10 +109,12 @@ int main(int argc, char *argv[]){
 		i++;
     }
 
-    // print the pairs of the resulting disjoint interval sequence
-    /*for (uint32_t i=0; i<r_; i++) {
+	fclose(runsAuxFile);
+
+    // print the L'
+    for (uint32_t i=0; i<r_; i++) {
         std::cout << M_LF.L_(i)<<std::endl;
-    }*/
+    }
 	//std::function<char(uint32_t)> read =[&M_LF](uint32_t i){return M_LF.L_(i);};
 
 	/*_RS_L_ = rsl_t(read,SIZE_ALPHA,(uint32_t)0,r_-1);
@@ -111,5 +128,6 @@ int main(int argc, char *argv[]){
     std::cout << to_string<>(ix1 = mds_str.move(ix1)) << std::endl;
     std::cout << to_string<>(ix1 = mds_str.move(ix1)) << std::endl;
 	*/
+
 	return 1;
 }

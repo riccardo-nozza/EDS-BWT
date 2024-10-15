@@ -21,8 +21,9 @@ using i_sym_t = constexpr_switch_t<
      /* constexpr_case<sizeof(sym_t) == 8, */ uint64_t
     >;
 std::vector<std::pair<uint32_t,uint32_t>> I_LF;
-using rsl_t = rank_select_support<i_sym_t,uint32_t,true,true>; // type of RS_L'
-//rsl_t _RS_L_;
+using rsl_t = rank_select_support<char>; // type of RS_L'
+rsl_t _RS_L_;
+std::string L_;
 
 
 int main(int argc, char *argv[]){
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]){
 	fclose(runsFile);
 
 
-	 move_data_structure_l_<> M_LF(I_LF,n,{
+	move_data_structure_l_<> M_LF(I_LF,n,{
         .num_threads = 4, .a = 2
     }, 8);
 	//: (uint8_t)(std::ceil(std::log2(idx.sigma+1)/(double)8)*8) se non usiamo un byte alphabet
@@ -113,21 +114,37 @@ int main(int argc, char *argv[]){
 
     // print the L'
     for (uint32_t i=0; i<r_; i++) {
-        std::cout << M_LF.L_(i)<<std::endl;
-    }
-	//std::function<char(uint32_t)> read =[&M_LF](uint32_t i){return M_LF.L_(i);};
+		L_ += M_LF.L_(i);
+	}
 
-	/*_RS_L_ = rsl_t(read,SIZE_ALPHA,(uint32_t)0,r_-1);
-	std::cout<<_RS_L_.frequency('T')<<std::cout;*/
-	//std::string ciao="ciao";
-	/*_RS_L_ = rsl_t(ciao);
-	_RS_L_.contains('c');*/
-	/*
-    std::pair<uint32_t,uint32_t> ix1{5,0};
-    std::cout<<""<<std::endl;
-    std::cout << to_string<>(ix1 = mds_str.move(ix1)) << std::endl;
-    std::cout << to_string<>(ix1 = mds_str.move(ix1)) << std::endl;
-	*/
+	std::cout<<L_<<std::endl;
+
+	_RS_L_ = rsl_t("da");
+	//std::cout<<_RS_L_.frequency('T')<<std::cout;
+	//va in error se gli passi una lettera sbagliata
+	try {
+		std::cout<<"Numero run"<<_RS_L_.select('C',1)<<endl;
+    } catch (const std::bad_optional_access& e) {
+        // Handle the exception
+        std::cerr << "Caught exception: " << e.what() << std::endl;
+		std::cerr << "Pattern Non presente"<< std::endl;
+    }
+	//std::cout<<"Numero input interval"<<M_LF.p(_RS_L_.select('C',1))<<endl;
+	//std::cout << to_string<>(M_LF.move({M_LF.p(_RS_L_.select('C',1)),_RS_L_.select('C',1)})) << std::endl;
+	/*std::cout<<"Numero run"<<_RS_L_.select(_RS_L_.rank('C',0)+1)<<endl;
+	std::cout<<"Posizione"<<M_LF.p(select(_RS_L_.rank('C',0)+1))<<endl;*/
+
+	/*int numC=_RS_L_.rank('C',r_);
+	int run=_RS_L_.select('C',numC);
+	std::cout<<"run number"<<run<<std::endl;
+	int runPosition=M_LF.p(run+1)-1;
+	std::cout << to_string<>(M_LF.move({runPosition, run})) << std::endl;
+	/*std::cout<<"Contiene"<<_RS_L_.rank('C',r_)<<endl;
+	std::cout<<"Numero run"<<_RS_L_.select(_RS_L_.rank('C',r_))+1<<endl;
+	std::cout<<"Posizione"<<M_LF.p(select(_RS_L_.rank('C',0)+1)+1)-1<<endl;*/
+
+
+
 
 	return 1;
 }

@@ -1,7 +1,3 @@
-[submodule "submodules/Move-r"]
-	path = submodules/Move-r
-	url = git@github.com:riccardo-nozza/Move-r.git
-	branch = master
 [submodule "Move-r"]
 	path = Move-r
 	url = git@github.com:riccardo-nozza/Move-r.git

@@ -14,7 +14,7 @@ endif()
 add_definitions(-DRECOVERBW=${RECOVERBW} -DOMP=${OMP} -DFASTQ=${FASTQ})
 
 include_directories(/home/include 
-submodules/Move-r/include/move_r
+Move-r/include/move_r
 )
 link_directories(/home/lib
 #submodules/Move-r
@@ -24,6 +24,6 @@ link_directories(/home/lib
 add_executable(M_LF_build M_LF_build.cpp)
 
 
-add_subdirectory(submodules/Move-r)
+add_subdirectory(Move-r)
 
 target_link_libraries(M_LF_build PRIVATE sdsl divsufsort divsufsort64 dl move_r)  # Link required libraries

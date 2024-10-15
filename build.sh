@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd submodules/Move-r/
+cd Move-r/
 cp -rf ./patched-files/* . 
 
-cd ../../
+cd ../
 mkdir build
 cd build
 cmake ..

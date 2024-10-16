@@ -15,15 +15,20 @@ add_definitions(-DRECOVERBW=${RECOVERBW} -DOMP=${OMP} -DFASTQ=${FASTQ})
 
 include_directories(/home/include 
 Move-r/include/move_r
+#Move-r/external/malloc_count
+#${CMAKE_SOURCE_DIR}
 )
 link_directories(/home/lib
 #submodules/Move-r
 )
 
-
-add_executable(M_LF_build M_LF_build.cpp)
-
+add_executable(MOVE_EDSBWTSearch 
+mainMove_EDSBWT.cpp
+MOVE_EDSBWTSearch.cpp
+Sorting.cpp
+#malloc_count/malloc_count.c
+)
 
 add_subdirectory(Move-r)
 
-target_link_libraries(M_LF_build PRIVATE sdsl divsufsort divsufsort64 dl move_r)  # Link required libraries
+target_link_libraries(MOVE_EDSBWTSearch PRIVATE sdsl divsufsort divsufsort64 dl move_r)  # Link required libraries

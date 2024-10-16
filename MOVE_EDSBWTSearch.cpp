@@ -216,14 +216,109 @@ void MOVE_EDSBWT::init_backward_search(){//check dei parametri qui
 }
 
 
-int MOVE_EDSBWT::backwardSearch(std::string,std::string, dataTypeNSeq n_kmer, std::string kmers, dataTypelenSeq lenKmer){
+int MOVE_EDSBWT::backwardSearch(std::string,std::string, dataTypeNSeq n_kmer, std::string kmer, dataTypelenSeq lenKmer){ //check indici +-1 IMPORTANTE	
 
+	bool res;
+
+#if DEBUG==1
+	std::cerr << "Pattern: " << kmer << "\n";
+#endif	
+
+	//Initialization
+	uchar symbol = kmer[lenKmer-1];
+	res=backward_search_step(symbol,b,e,b_,e_);
+	if (!res){
+		std::cout<<"pattern non presente"<<std::endl;
+		return 0;
+	}
+	std::cout<<b<<","<<e<<","<<b_<<","<<e_<<std::endl;
+	for (dataTypelenSeq posSymb=lenKmer-1; posSymb>0; posSymb--) {   //For each symbol of the kmer
+
+		symbol= kmer[posSymb-1];
+		std::cout<<symbol<<std::endl;
+
+		res=backward_search_step(symbol,b,e,b_,e_);
+		std::cout<<b<<","<<e<<","<<b_<<","<<e_<<std::endl;
+		if (!res){
+			std::cout<<"pattern non presente"<<std::endl;
+			return 0;
+		}
+
+		#if DEBUG == 1
+		std::cerr << "\n Iteration: posSymb in Pattern = "  << (int) posSymb << " symbol "<< symbol  << "\t";
+		std::cerr << "symbPile= "<< (char)alphaInverse[(int)symbPile]  << "\n";
+		#endif
+		
+		//assert(link(rb_1,bsel_1)==1);
+
+		//For each symbol in the kmer we have to update both vectRangeDollarPile (if not empty) and vectRangeOtherPile 
+
+//		std::cerr << "--------------------------------------backward search: the cycle for " << "symbol in position " << (int)posSymb << " took " << difftime(end,start) << " seconds\n\n";
 	
+	}
+
+
 
 	return 1;
 }
 
+bool MOVE_EDSBWT::backward_search_step(sym_t sym, pos_t& b, pos_t& e, pos_t& b_, pos_t& e_){
 
+   try{
+	if (!_RS_L_.contains(sym)) return false;
+
+	if (sym != M_LF.L_(b_)){
+		b_ = _RS_L_.rank(sym,b_);
+		if (b_ == _RS_L_.frequency(sym)) return false;
+		b_ = _RS_L_.select(sym,b_+1);
+		if (b_ > e_) return false;
+	}
+	b = M_LF.p(b_);
+
+    // Find the lexicographically largest suffix in the current suffix array interval that is prefixed by P[i]
+    if (sym != M_LF.L_(e_)) {
+		e_ = _RS_L_.select(sym,_RS_L_.rank(sym,e_));
+	}   
+	e = M_LF.p(e_+1)-1;
+
+    // If the suffix array interval is empty, P does not occur in T, so return false.
+    if (b > e) return false;
+    
+    /* Else, set b <- LF(b) and e <- LF(e). The following two optimizations increase query throughput slightly
+        if there are only few occurrences */
+    if (b_ == e_) {
+        if (b == e) {
+            /* If \hat{b'}_i == \hat{e'}_i and b'_i = e'_i, then computing
+            (e_i,\hat{e}_i) <- M_LF.move(e'_i,\hat{e'}_i) is redundant */
+            M_LF.move(b,b_);
+            e = b;
+            e_ = b_;
+        } else {
+            /* If \hat{b'}_i == \hat{e'}_i, but b'_i != e'_i, then e_i = b_i + e'_i - b'_i and therefore
+            \hat{b'}_i < \hat{e'}_i, hence we can compute \hat{e'}_i by setting e_ <- \hat{b'}_i = b_ and
+            incrementing e_ until e < M_LF.p[e_+1] holds; This takes O(a) time because of the a-balancedness property */
+            pos_t diff_eb = e - b;
+            M_LF.move(b,b_);
+            e = b + diff_eb;
+            e_ = b_;
+            
+            while (e >= M_LF.p(e_+1)) {
+                e_++;
+            }
+        }
+    } else {
+        M_LF.move(b,b_);
+        M_LF.move(e,e_);
+    }
+   } catch (const std::bad_optional_access& e) {
+        // Handle the exception
+        std::cerr << "Caught exception: " << e.what() << std::endl;
+		std::cerr << "Pattern Non presente"<< std::endl;
+		return false;
+    }
+
+    return true;
+}
 
 MOVE_EDSBWT::~MOVE_EDSBWT()
 {

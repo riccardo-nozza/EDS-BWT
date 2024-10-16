@@ -33,7 +33,10 @@ using std::vector;
 using std::map;*/
 
 //CONTROLLARE TIPATURE VARIE
-#define sym_t char;
+typedef char sym_t;
+typedef uint32_t pos_t;
+
+
 using i_sym_t = constexpr_switch_t<
         constexpr_case<sizeof(char) == 1,    uint8_t>,
         constexpr_case<sizeof(char) == 2,    uint16_t>,
@@ -42,8 +45,8 @@ using i_sym_t = constexpr_switch_t<
     >;
 using rsl_t = rank_select_support<char>; // type of RS_L'
 
-
 using namespace sdsl;
+
 
 class MOVE_EDSBWT
 {
@@ -54,10 +57,13 @@ public:
 
     int build_MLF(std::string);
 
-    //int backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq n_kmer, string kmers, dataTypelenSeq lenKmer, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
-    int backwardSearch(std::string,std::string, dataTypeNSeq n_kmer, std::string kmers, dataTypelenSeq lenKmer);
-    
     void init_backward_search();
+
+    bool backward_search_step(sym_t sym, pos_t& b, pos_t& e, pos_t& b_, pos_t& e_);
+
+    //int backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq n_kmer, string kmers, dataTypelenSeq lenKmer, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);    
+    int backwardSearch(std::string,std::string, dataTypeNSeq n_kmer, std::string kmers, dataTypelenSeq lenKmer);
+
 
 
     /*

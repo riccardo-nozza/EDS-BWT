@@ -15,9 +15,9 @@
 
 #include <move_r/move_r.hpp>
 
-/*
-#include <deque>
 
+#include <deque>
+/*
 #include <map>
 #include <sdsl/bit_vectors.hpp>
 
@@ -56,33 +56,44 @@ public:
     ~MOVE_EDSBWT();
 
     int build_MLF(std::string);
+    pos_t findInputInterval(uint32_t i);
 
-    void init_backward_search();
+    void init_backward_search(rangeElement& firstInterval);
 
-    bool backward_search_step(sym_t sym, pos_t& b, pos_t& e, pos_t& b_, pos_t& e_);
+    bool backward_search_step(sym_t sym, std::vector<rangeElement>& vectRangeOtherPile);
+    int updateSingleInterval(sym_t sym, rangeElement& interval);
 
     //int backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq n_kmer, string kmers, dataTypelenSeq lenKmer, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);    
-    int backwardSearch(std::string,std::string, dataTypeNSeq n_kmer, std::string kmers, dataTypelenSeq lenKmer);
+    int backwardSearch(std::string,std::string, dataTypeNSeq n_kmer, std::string kmers, dataTypelenSeq lenKmer,rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
+
+    int link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
+
+    void dollars_in_interval(std::deque<dataTypeNSeq> &d_out,dataTypeNChar i,dataTypeNChar j);
+    
+    int recoverInfo(std::string filename);
+
+    rangeElement preceding_dollars_finder(dataTypeNSeq i, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
+
 
 
 
     /*
     string  fileOutBwt;
-    string  fileOutCyc;
-    string  ext;
+    string  fileOutCyc;*/
+    std::string  ext;
     
 	std::vector<rangeElement> vectRangeDollarPile;
 	std::vector<rangeElement> vectRangeOtherPile;
 	dataTypedimAlpha symbPile;
     
-    dataTypeNChar SIZEBUFFERcycFiles;
+    //dataTypeNChar SIZEBUFFERcycFiles;
     
-    dataTypelenSeq lengthRead;    //Length of each text
-    dataTypeNChar lengthTot;   //Total length of all texts without $-symbols
+    //dataTypelenSeq lengthRead;    //Length of each text
+    //dataTypeNChar lengthTot;   //Total length of all texts without $-symbols
     dataTypeNChar lengthTot_plus_eof;   //Total length of all texts with $-symbols
 
     dataTypeNSeq nText;   //number total of texts in filename1
-    dataTypeNChar freq[256];  //contains the distribution of the symbols. It is useful only for testing. It depends on the #characters
+    //dataTypeNChar freq[256];  //contains the distribution of the symbols. It is useful only for testing. It depends on the #characters
     
     int numthreads;
     
@@ -100,6 +111,10 @@ public:
 	std::vector< rrr_vector<>::rank_1_type > EOFpos_rank; 
 	dataTypeNChar** EOF_ID;
 
+
+    dataTypeNChar* EOF_ID_Copy;
+    uint32_t* M_LF_Dollar_Input_interval;
+    /*
     std::vector <bool> vectInsTexts;
     dataTypeNSeq textToInsert;
     vector <dataTypeNChar> vectSizeCurrentPile;
@@ -146,8 +161,7 @@ public:
 	
 	int rankInverseManyByVector (string fileInput, dataTypeNSeq numKmersInput, uchar *toFindSymbols, uchar *bufferBlock);
 	int update_Pos_Pile_Blocks(dataTypeNChar *toRead, dataTypeNChar *numBlock, dataTypedimAlpha currentPile, uchar toFindSymbol);
-	int update_Pos_Pile(rangeElement *tripla);
-    */
+	int update_Pos_Pile(rangeElement *tripla);*/
 	////////////////////
     
 private:
@@ -158,8 +172,6 @@ private:
     move_data_structure_l_<> M_LF;//M_LF data structure, initialized
     rsl_t _RS_L_;//Rank-select data structure for L'
     std::vector<std::pair<uint32_t,uint32_t>> I_LF;//disjoint interval sequence to build M_LF
-    uint32_t b,e,b_,e_;
-
     /*
     int findBlockToRead(dataTypeNChar *, dataTypedimAlpha , dataTypeNChar *, dataTypeNChar *);
     

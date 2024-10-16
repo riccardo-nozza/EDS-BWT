@@ -14,10 +14,7 @@ using std::endl;
 #include "MOVE_EDSBWTSearch.hpp"
 #include "Parameters.h"
 
-using namespace std;
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
 
     if( argc != 3 ) {
 		std::cerr << "usage: " << argv[0] << " inputEBWTfileName inputPATTERNfile" << std::endl;

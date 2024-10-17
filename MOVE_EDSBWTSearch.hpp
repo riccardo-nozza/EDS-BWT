@@ -74,8 +74,13 @@ public:
 
     rangeElement preceding_dollars_finder(dataTypeNSeq i, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
 
+    void MergeAndRemove (std::vector< rangeElement > &vectRange, dataTypeNSeq &k,dataTypeNSeq &k_tmp);
 
 
+
+    void print(std::vector<rangeElement> &vectRange);
+
+    void print_interval_number();
 
     /*
     string  fileOutBwt;
@@ -136,21 +141,6 @@ public:
     
     int convertFromCycFileToFastaOrFastq( string );
 	
-	////////2024///////
-    int computeCountersInSingleInterval(FILE *InFileBWT, dataTypeNChar toRead, dataTypedimAlpha currentPile,dataTypeNChar * counters);
-
-    int updateSingleInterval(std::vector<rangeElement> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, uchar symbol, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock);
-	int updateIntervals(std::vector<rangeElement> &vectRange, string fileInput, string fileOutDecode, uchar symbol, dataTypedimAlpha currentPile);
-	//int updateSingleInterval(std::vector<rangeElement> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, uchar symbol);
-	dataTypeNChar rankManySymbols(FILE & InFileBWT, dataTypeNChar *counters, dataTypeNChar toRead, uchar *foundSymbol, uchar *bufferBlock);
-	int link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
-	void dollars_in_interval(dataTypelenSeq symbPile, std::deque<dataTypeNSeq> &output,dataTypeNChar i,dataTypeNChar j, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
-	rangeElement preceding_dollars_finder(dataTypeNSeq i, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);
-	
-	dataTypeNChar a;
-	
-
-	
 	#if RECOVERBW==1
 		int findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, string fileInput,string fileOutDecode,dataTypeNSeq n_kmer,rank_support_v<1> &rb_1,bit_vector::select_1_type &bsel_1);
 		int updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock);
@@ -172,16 +162,5 @@ private:
     move_data_structure_l_<> M_LF;//M_LF data structure, initialized
     rsl_t _RS_L_;//Rank-select data structure for L'
     std::vector<std::pair<uint32_t,uint32_t>> I_LF;//disjoint interval sequence to build M_LF
-    /*
-    int findBlockToRead(dataTypeNChar *, dataTypedimAlpha , dataTypeNChar *, dataTypeNChar *);
-    
-    FILE * openFilePartialIn(string filename, dataTypedimAlpha currentPile);
-    dataTypeNChar readOnFilePartial(uchar *buffer, dataTypeNChar toRead, FILE * InFileBWT);
-    dataTypeNChar writeOnFilePartial(uchar *buffer, dataTypeNChar numchar, FILE * OutFileBWT);
-    int closeFilePartial(FILE * pFile);
-	
-	void print (std::vector<rangeElement> &vectRange);
-	void print_interval_number ();*/
-
-    
+    int num_of_eof;    
 };

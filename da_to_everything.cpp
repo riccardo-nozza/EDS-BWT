@@ -61,7 +61,6 @@ int get_char_start_pos(){
 	return 0;
 }
 
-//CHECK: molto inefficace ma deve funzionare per ora
 int build_ilf(string fileName){
 
 	string runsAuxFileName = string(fileName) + "_runs.aux";
@@ -441,7 +440,7 @@ int remove_empty_symbols(string fileName){
 			if (totalCharRead < toKeep){
 
 				if (prev_char!=BWTbuffer[i] || 	BWTbuffer[i]==EMPTY_CHAR || BWTbuffer[i]==TERMINATE_CHAR){//if char different from prv, there's a new run
-				    fprintf(runsAuxFile, "%d,%c\n", pos, BWTbuffer[i]); //CHECK: aggiungere 1? Non penso ma occhio
+				    fprintf(runsAuxFile, "%d,%c\n", pos, BWTbuffer[i]); 
 			
 				}
 				prev_char=BWTbuffer[i];

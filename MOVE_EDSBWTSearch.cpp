@@ -13,7 +13,6 @@
 
 using namespace std;
 using namespace sdsl;
-//IMPORTANTE ASSERT VARI
 
 bool compare(rangeElement a, rangeElement b);
 
@@ -30,24 +29,25 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 
 	M_LF_Dollar_Input_interval = new uint32_t[num_of_eof];
 	
+	n=lengthTot_plus_eof;//text length
+
 	#if RECOVER_INFO
 		#if DEBUG==1
 			fprintf(stderr, "##BEFORE recoverInfo\nmalloc_count ### current peak: %zu\n##\n", malloc_count_peak());
 		#endif
 	#endif
 
-	cout << "BUILDING M_LF..."<< endl;
-	build_MLF(inputFileName);
-	cout << "M_LF built"<< endl;
-
-	for (int i=0;i<num_of_eof;i++){
-		cout<<EOF_ID_Copy[i]<<endl;
+	cout << "RETRIEVING M_LF..."<< endl;
+	if (retrieve_MLF(inputFileName)==-1){
+		cout<<"Error retrievinf MLF, exit"<<endl;
+		exit(0);
 	}
+	cout << "M_LF RETRIEVED"<< endl;
 
 	std::function<uint32_t(uint32_t)> read = [this](uint32_t i){return M_LF.L_(i);};//function that given an index i, returns M_LF.L_(i)
-	//usefuk for building rank-select data structure
+	//useful for building rank-select data structure
 	_RS_L_=rsl_t(read,0,r_);
-
+	
 
 	string searchOutput_s = filepatterns + "output_M_LF.csv";
 	std::ofstream searchOutput;
@@ -75,22 +75,22 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 		std::cerr << "Error opening \"" << fileBitVector << "\" file"<< std::endl;
 		exit (1);
 	}
-	free(fileBitVector);
-	rank_support_v<1> rb_1(&rrrb);
+	delete[] fileBitVector;
+
+	std::function<int(uint32_t)> read_bitvector = [this](uint32_t i){return (int)(rrrb[i]);};//function that given an index i, rrrb[i]
+	//IMPORTANTE SI POTREBE LIBERARE RRRB GIÀ QUI. (o forse no)
+
+	rrrb_size = rrrb.size();
+	_RS_bitvector_=rsl_t(read_bitvector,0,rrrb_size); //mi pare non trovi gli 0
+	cout<<"BitVector size: "<<_RS_bitvector_.size()<<endl;
+
+	//rank_support_v<1> rb_1(&rrrb);
 	
 	#if DEBUG == 1
 		fprintf(stderr, "##BEFORE select_1_type\nmalloc_count ### current peak: %zu\n##\n", malloc_count_peak());
 	#endif
 	bit_vector::select_1_type bsel_1(&rrrb);
-	first_symbol_index = bsel_1(2)-1;
-
-	#if DEBUG == 1
-	fprintf(stderr, "##AFTER select_1_type\nmalloc_count ### current peak: %zu\n##\n", malloc_count_peak());
-		cout<<"This is the bitvector"<<endl;
-		for (dataTypeNSeq ttt=0; ttt < rrrb.size() ; ttt++ )
-			cout<< rrrb[ttt] << "\t";
-		cout << endl;
-	#endif
+	first_symbol_index = bsel_1(2)-1; //IMPORTANTE CAMBIARE POI
 
 
 	dataTypeNSeq count_found=0, count_not_found=0;
@@ -110,13 +110,15 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 			time (&startI);
 		#endif
 		
-		if(backwardSearch(inputFileName.c_str(), filepatterns.c_str(), i+1, kmer, lenKmer,rb_1, bsel_1) > 0){
+		if(backwardSearch(inputFileName.c_str(), filepatterns.c_str(), i+1, kmer, lenKmer) > 0){
 			//std::cerr << "1" << endl;
 			count_found++;
+			std::cerr<<"OCCORRENZA DI: "<<kmer<<" TROVATA"<<endl;
 		}
 		else{
 			//std::cerr << "0" << endl;
 			count_not_found++;
+			std::cerr<<"OCCORRENZA DI: "<<kmer<<" NON TROVATA"<<endl;
 		}
 		
 		#if DEBUG==1
@@ -128,10 +130,10 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 		i++;
 	}
 
+	fprintf(stderr, "##\nmalloc_count ### current peak: %zu\n##\n", malloc_count_peak());
+
 	InFileKmer.close();
 	
-	//IMPORTANTE TROVA UN OCC IN MENO NEL PRIMO PATTERN
-
 	std::cerr << endl;
 	std::cerr << "count_found = " << count_found << endl;
 	std::cerr << "count_not_found = " << count_not_found << endl;
@@ -157,85 +159,34 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 	//IMPORTANTE LIBERARE TUTTO
 }
 
+int MOVE_EDSBWT::retrieve_MLF(std::string inputFileName){
 
-int MOVE_EDSBWT::build_MLF(std::string inputFileName){
-
-	string ebwtFileName = string(inputFileName) + ".ebwt";
-	FILE *ebwtFile = fopen(ebwtFileName.c_str(), "r");
-	if (ebwtFile == NULL) {
-		std::cerr << "Error opening \"" << ebwtFile << "\" file"<< std::endl;
-		exit (1);
-	}
-	fseek(ebwtFile, 0L, SEEK_END);
-	n=ftell(ebwtFile); //retrieve text length n
-
-	fclose(ebwtFile);
-
-
-	string runsFileName = string(inputFileName) + "_runs.txt";
-	FILE *runsFile = fopen(runsFileName.c_str(), "r");
-	if (runsFile == NULL) {
-		std::cerr << "Error opening \"" << runsFile << "\" file"<< std::endl;
-		exit (1);
-	}
-
-	int LPos;
-	int LFPos;
-	int I_LF_index=0;
 	no_init_resize(I_LF,n);
 
-	M_LF_Dollar_Input_interval[0]=0;
-
-	while (fscanf(runsFile, "%d,%d\n", &LPos, &LFPos) != EOF) {
-		//std::cout<<LPos<<" "<<LFPos<<std::endl; //questo si può poi cancellare, ora è per controllo
-	 	/* Write the pair (i',LF(i')) to the next position i in I_LF*/
-		I_LF[I_LF_index++]=std::make_pair(LPos,LFPos);
-		/* Update the rank-function in C[i_p] to store C[i_p][c] = rank(L,c,i'-1),
-            for each c in [0..255] 
-            C[i_p][run_sym(i_p,i)] += run_len(i_p,i);*/
-    }
-	fclose(runsFile);
-
-
-	M_LF=move_data_structure_l_<>(I_LF,n,{
-        .num_threads = 4, .a = 2
-    }, 8); 
-
-    r_=M_LF.num_intervals();
-
-    for (uint32_t i=0; i<r_; i++) {
-        std::cout << to_string<>({M_LF.p(i),M_LF.q(i)})<<std::endl;
+	string input_MLF_Name = string(inputFileName) + "_MLF.aux";
+    std::ifstream ifs_MLF(input_MLF_Name);
+    if (!ifs_MLF) {
+        std::cerr << "Error opening file: " << input_MLF_Name << std::endl;
+        return -1;
     }
 
-	string runsAuxFileName = string(inputFileName) + "_runs.aux";
-	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "r");
-	if (runsAuxFile == NULL) {
-		std::cerr << "Error opening \"" << runsAuxFile << "\" file"<< std::endl;
-		exit (1);
-	}
+	M_LF.load(ifs_MLF);
 
-	int i=0;
-	int initPos;
-    dataTypedimAlpha let;
+	cout<<"size= "<<I_LF.size()<<endl;
+	r_=M_LF.num_intervals();
 
-	while (fscanf(runsAuxFile, "%d,%c\n", &initPos, &let) != EOF) {
-		if (let==EMPTY_CHAR){
-			M_LF.set_L_(i,TERMINATE_CHAR);
-		}
-		else{
-			M_LF.set_L_(i,let);
-		}
-		i++;
-    }
 
-	fclose(runsAuxFile);
+	I_LF.resize(r_);
+	cout<<"new size= "<<I_LF.size()<<endl;
+	cout<<"actual size= "<<r_<<endl;
 
+	ifs_MLF.close();
 
 	//build M_LF__Dollar_Input_Interval
+	M_LF_Dollar_Input_interval[0]=0;
 	for (uint32_t i=1;i<num_of_eof;i++){
 		pos_t x=findInputInterval(i);
 		M_LF_Dollar_Input_interval[i]=x;
-		cout<<x<<endl;
 	}
 
 	return 1;
@@ -258,7 +209,7 @@ void MOVE_EDSBWT::init_backward_search(rangeElement& firstInterval){//check dei 
 }
 
 
-int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dataTypeNSeq n_kmer, std::string kmer, dataTypelenSeq lenKmer,rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1){ //check indici +-1 IMPORTANTE	
+int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dataTypeNSeq n_kmer, std::string kmer, dataTypelenSeq lenKmer){ 
 
 	bool res;
 	bool found_one_occ;
@@ -269,11 +220,92 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 
 	//Initialization
 	uchar symbol = kmer[lenKmer-1];
+	cout <<symbol<<endl;
 	vectRangeOtherPile.resize(1);
 
 	init_backward_search(vectRangeOtherPile[0]);
 
+	/*
+	uint32_t b_=_RS_L_.rank('A',0);
+	b_=_RS_L_.select('A',b_+1);
+	cout<<"positionII of first A "<<b_<<endl;
+	uint32_t b = M_LF.p(b_);
+	uint32_t e_=_RS_L_.rank('A',r_);
+	cout<<"number of A end"<<e_<<endl;
+	e_=_RS_L_.select('A',e_);
+	uint32_t e=M_LF.p(e_+1)-1;
+	cout<<"positionII of last A "<<e_<<endl;
+	M_LF.move(b,b_);
+		cout<<"new position of first A "<<b<<endl;
+	M_LF.move(e,e_);
+		cout<<"new position of last A "<<e<<endl;
+
+	b_=_RS_L_.rank('#',0);
+	b_=_RS_L_.select('#',b_+1);
+	cout<<"positionII of first # "<<b_<<endl;
+	b = M_LF.p(b_);
+	e_=_RS_L_.rank('#',r_);
+	cout<<"number of # end"<<e_<<endl;
+	e_=_RS_L_.select('#',e_);
+	cout<<"positionII of last # "<<e_<<endl;
+	e=M_LF.p(e_+1)-1;
+	M_LF.move(b,b_);
+		cout<<"new position of first # "<<b<<endl;
+	M_LF.move(e,e_);
+		cout<<"new position of last # "<<e<<endl;
+
+
+	b_=_RS_L_.rank('C',0);
+	b_=_RS_L_.select('C',b_+1);
+	cout<<"positionII of first C "<<b_<<endl;
+	b = M_LF.p(b_);
+	e_=_RS_L_.rank('C',r_);
+	cout<<"number of C end"<<e_<<endl;
+	e_=_RS_L_.select('C',e_);
+	cout<<"positionII of last C "<<e_<<endl;
+		e=M_LF.p(e_+1)-1;
+
+	M_LF.move(b,b_);
+		cout<<"new position of first C "<<b<<endl;
+	M_LF.move(e,e_);
+		cout<<"new position of last C "<<e<<endl;
+
+	b_=_RS_L_.rank('G',0);
+	b_=_RS_L_.select('G',b_+1);
+	cout<<"positionII of first G "<<b_<<endl;
+	b = M_LF.p(b_);
+	e_=_RS_L_.rank('G',r_);
+	cout<<"number of G end"<<e_<<endl;
+	e_=_RS_L_.select('G',e_);
+	cout<<"positionII of last G "<<e_<<endl;
+		e=M_LF.p(e_+1)-1;
+
+	M_LF.move(b,b_);
+		cout<<"new position of first G "<<b<<endl;
+	M_LF.move(e,e_);
+		cout<<"new position of last G "<<e<<endl;
+
+	b_=_RS_L_.rank('T',0);
+	b_=_RS_L_.select('T',b_+1);
+	cout<<"positionII of first T "<<b_<<endl;
+	b = M_LF.p(b_);
+	e_=_RS_L_.rank('T',r_);
+	cout<<"number of T end"<<e_<<endl;
+	e_=_RS_L_.select('T',e_);
+	cout<<"positionII of last T "<<e_<<endl;
+		e=M_LF.p(e_+1)-1;
+
+	M_LF.move(b,b_);
+		cout<<"new position of first T "<<b<<endl;
+	M_LF.move(e,e_);
+		cout<<"new position of last T "<<e<<endl;
+	
+	*/
+
+
 	res=backward_search_step(symbol, vectRangeOtherPile);
+	int link_res;
+
 	if (!res){
 		std::cout<<"pattern non presente"<<std::endl;
 		return 0;
@@ -282,15 +314,19 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 
 		found_one_occ=false;
 
-		link(rb_1,bsel_1);//check ==1 assert
+		link_res = link();
+		if (link_res!=1){
+			std::cerr << "Error link"<< std::endl;
+        	exit (EXIT_FAILURE);
+		}
 
-		cerr<<"backwardSearch - dopo link (including merge)"<<"\n";
+		/*cerr<<"backwardSearch - dopo link (including merge)"<<"\n";
 		print_interval_number();
 		cerr << "vectRangeDollarPile (computed): ";
 		print(vectRangeDollarPile);		
 		cerr << "-symbPile: " << (int)symbPile << "\n";
 		cerr << "vectRangeOtherPile (original): ";
-		print(vectRangeOtherPile);	
+		print(vectRangeOtherPile);	*/
 
 		symbol= kmer[posSymb-1];
 
@@ -314,9 +350,6 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 			return 0;
 		}
 
-		//IMPORTANTE ADD MERGE PROBABLY 
-		//E GESTIRE INTERVALLI IN CUI NON C'È NULLA. (scartarli) -> forse fatto
-
 		//Append elements of vectRangeOtherPile to vectRangeDollarPile
 		vectRangeDollarPile.insert(std::end(vectRangeDollarPile), std::begin(vectRangeOtherPile), std::end(vectRangeOtherPile));
 		
@@ -326,21 +359,23 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 
 		std::sort(vectRangeOtherPile.begin(),vectRangeOtherPile.end(),compare);
 
+		//print(vectRangeOtherPile);
+
 		//merge part 
 		if (vectRangeOtherPile.size()>1){		
-		for (int i=1;i<vectRangeOtherPile.size();i++){
+		for (uint32_t i=1;i<vectRangeOtherPile.size();i++){
 			if ( (vectRangeOtherPile[i].startPosN == vectRangeOtherPile[i-1].endPosN +1)){
 			vectRangeOtherPile[i-1].endPosN = vectRangeOtherPile[i].endPosN;
 			vectRangeOtherPile[i-1].endPosNII = vectRangeOtherPile[i].endPosNII;
 			vectRangeOtherPile.erase(vectRangeOtherPile.begin()+i);
 			if (vectRangeOtherPile.size()>0){
 				i--;
-			}
+					}
+				}
 			}
 		}
-	}
 
-	print(vectRangeOtherPile);
+		//print(vectRangeOtherPile);
 
 		#if DEBUG == 1
 		std::cerr << "\n Iteration: posSymb in Pattern = "  << (int) posSymb << " symbol "<< symbol  << "\t";
@@ -359,18 +394,22 @@ bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vec
 
 	dataTypeNSeq sizeVectRange = vectRange.size();
 
-	bool res;
 	bool res1=false; //da cambiare poi
 
-	for (int k=0; k < sizeVectRange; k++) {	
+	cout<<"size:" <<sizeVectRange<<endl;
+
+	for (uint32_t k=0; k < sizeVectRange; k++) {	
+		cout<<vectRange[k].startPosN<<endl;
 		bool res = updateSingleInterval(sym,vectRange[k]);
+		//cout<<"Lettera "<<sym<<"presente nell'intervallo "<	<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl;
 		if (!res) {
 			cout<<"Lettera "<<sym<<"non presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl; //direi di fare remove qui
-			cout<<"rimozione intervallo"<<endl;
+			//cout<<"rimozione intervallo"<<endl;
 			vectRange.erase(vectRange.begin()+k);
-			if (vectRangeOtherPile.size()>k){
-				k--;
+			if (vectRange.size()==0 || k>=vectRange.size()){
+				break;
 			}
+				k--;
 		}
 		else res1=true;
 	}
@@ -379,58 +418,14 @@ bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vec
 
 }
 
-/*
-void MOVE_EDSBWT::MergeAndRemove(std::vector< rangeElement > &vectRange, dataTypeNSeq &k,dataTypeNSeq &k_tmp){
-		
-	if (vectRange[k_tmp].startPosN > vectRange[k_tmp].endPosN)//k_tmp not a valid interval
-	{
-		#if DEBUG==1
-		cerr << "\t REPLACE (" << vectRange[k_tmp].startPosN << " " <<  vectRange[k_tmp].endPosN << ") with"; 	
-		cerr << " (" << vectRange[k].startPosN << " " <<  vectRange[k].endPosN << ")\n";
-		#endif
-		
-		vectRange[k_tmp].startPosN = vectRange[k].startPosN;
-		vectRange[k_tmp].endPosN = vectRange[k].endPosN;
-	}
-	else{ //k_tmp is a valid interval
-		if ( (vectRange[k].startPosN == vectRange[k_tmp].endPosN +1) && (vectRange[k].startPosN <= vectRange[k].endPosN) ){
-			#if DEBUG==1
-			cerr << "\tMERGE (" << vectRange[k].startPosN << " " <<  vectRange[k].endPosN << ") in"; 	
-			cerr << " (" << vectRange[k_tmp].startPosN << " " <<  vectRange[k_tmp].endPosN << ") -->"; 	
-			#endif
-
-			vectRange[k_tmp].endPosN = vectRange[k].endPosN;
-
-			#if DEBUG==1
-			cerr << "(" << vectRange[k_tmp].startPosN << " " <<  vectRange[k_tmp].endPosN << ")\n";
-			#endif
-		}		
-		else if ( vectRange[k].startPosN > vectRange[k].endPosN)   
-		{
-			#if DEBUG==1
-				cerr << "\tSKIP (" << vectRange[k].startPosN << " " <<  vectRange[k].endPosN << ") "; 	
-				cerr << " k_tmp points to (" << vectRange[k_tmp].startPosN << " " <<  vectRange[k_tmp].endPosN << ")\n"; 
-			#endif
-		}		
-		else {
-			k_tmp++;
-			#if DEBUG==1
-			cerr << "\t COPY (" << vectRange[k].startPosN << " " <<  vectRange[k].endPosN << ") in"; 	
-			cerr << " (" << vectRange[k_tmp].startPosN << " " <<  vectRange[k_tmp].endPosN << ")\n";
-			#endif
-			vectRange[k_tmp].startPosN = vectRange[k].startPosN;
-			vectRange[k_tmp].endPosN = vectRange[k].endPosN;
-		}
-	}
-}*/
-
 int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 
 	dataTypeNChar b,e,b_,e_;
 	b = interval.startPosN;	
 	e = interval.endPosN;
 	b_ = interval.startPosNII;	
-	e_ = interval.endPosNII;	
+	e_ = interval.endPosNII;
+	cout<<" start b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
 
    try{
 	if (!_RS_L_.contains(sym)) return false;
@@ -448,6 +443,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 		e_ = _RS_L_.select(sym,_RS_L_.rank(sym,e_));
 		e = M_LF.p(e_+1)-1;
 	}   
+	//cout<<"b"<<b<<"e"<<e<<"b'"<<b_<<"e'"<<e_<<endl;	
 	
 
     // If the suffix array interval is empty, P does not occur in T, so return false.
@@ -467,6 +463,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 			interval.endPosN=e;
 			interval.startPosNII=b_;	
 			interval.endPosNII=e_;	
+			cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
 
         } else {
             /* If \hat{b'}_i == \hat{e'}_i, but b'_i != e'_i, then e_i = b_i + e'_i - b'_i and therefore
@@ -484,6 +481,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 			interval.endPosN=e;
 			interval.startPosNII=b_;	
 			interval.endPosNII=e_;	
+			cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
         }
 
     } else {
@@ -493,7 +491,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 		interval.endPosN=e;
 		interval.startPosNII=b_;	
 		interval.endPosNII=e_;	
-
+		cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
     }
    } catch (const std::bad_optional_access& e) {
         // Handle the exception
@@ -505,7 +503,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
     return true;
 }
 
-int MOVE_EDSBWT::link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1){
+int MOVE_EDSBWT::link(){
 
 	// find the indexes of each dollar contained in each interval [startPosN,endPosN] of vectRangeOtherPile and store it in d.
 	deque<dataTypeNSeq> d;
@@ -517,7 +515,7 @@ int MOVE_EDSBWT::link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1
 
 		b_ = vectRangeOtherPile[itVectRange].startPosNII;	
 		e_ = vectRangeOtherPile[itVectRange].endPosNII;
-		cout<<"start"<<vectRangeOtherPile[itVectRange].startPosN<<" end"<<vectRangeOtherPile[itVectRange].endPosN<<endl;
+		//cout<<"start"<<vectRangeOtherPile[itVectRange].startPosN<<" end"<<vectRangeOtherPile[itVectRange].endPosN<<endl;
 
 
 		if(b_ <= e_){
@@ -527,6 +525,8 @@ int MOVE_EDSBWT::link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1
 
 	//after obtaining the vector of the indexes (note that there are no repetitions), sort it.
 	std::sort(d.begin(),d.end());
+	//cout<<d.size()<<endl;
+	//cout<<"num of eof"<<num_of_eof<<endl;
 
 
 	//TO DO: limitation
@@ -534,9 +534,11 @@ int MOVE_EDSBWT::link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1
 
 	rangeElement current;
 
+
 	while(!(d.empty())){
 
-		current = preceding_dollars_finder(d.back(),rb_1,bsel_1);
+		//cout<<d.back()<<endl;
+		current = preceding_dollars_finder(d.back());
 		d.pop_back();
 
 		if (!(vectRangeDollarPile.empty()) and (current.endPosN + 1 >= (vectRangeDollarPile.back()).startPosN)){
@@ -549,10 +551,9 @@ int MOVE_EDSBWT::link(rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1
 		else {
 			vectRangeDollarPile.insert(vectRangeDollarPile.end(),current);
 		}
-
+		cout<<"start "<<current.startPosN<<" end "<<current.endPosN<<" startII "<<current.startPosNII<<" endII "<<current.endPosNII<<endl;
 		dollars_in_interval(d,current.startPosNII,current.endPosNII);
 		//d.shrink_to_fit();
-
 	}
 
 	reverse(vectRangeDollarPile.begin(),vectRangeDollarPile.end());
@@ -564,28 +565,40 @@ bool compare(rangeElement a, rangeElement b) {
 }
 
 
-rangeElement MOVE_EDSBWT::preceding_dollars_finder(dataTypeNSeq i, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1){
+rangeElement MOVE_EDSBWT::preceding_dollars_finder(dataTypeNSeq i){
 	
 	dataTypeNChar a;
 
-	a = rb_1(i+1); //a is the index of the segment containing the i-th dollar
+	//a = rb_1(i+1); //a is the index of the segment containing the i-th dollar
+	if (i+1>rrrb_size){
+		a=_RS_bitvector_.rank(1,rrrb_size);
+	}
+	else{
+		a=_RS_bitvector_.rank(1,i+1);
+	}
 
-	dataTypeNChar start = bsel_1(a-1); //bsel_1(k) gives the index of the k-th 1. That is, the index of the first word of the k-th segment.
+	cout<<"# dollars before"<<i<<" = "<<a<<endl;
+	dataTypeNChar start=_RS_bitvector_.select(1,a-1);
+
+	//dataTypeNChar start = bsel_1(a-1); //bsel_1(k) gives the index of the k-th 1. That is, the index of the first word of the k-th segment.
 	
 	
-	dataTypeNChar end = bsel_1(a)-1; //same as before. We subtract 1 because we want to find the index of the last word of the (a-1)-th segment.
+	//dataTypeNChar end = bsel_1(a)-1; //same as before. We subtract 1 because we want to find the index of the last word of the (a-1)-th segment.
+	dataTypeNChar end =_RS_bitvector_.select(1,a)-1;
+		//cout<<"start"<<start<<" end"<<end<<endl;
 
 	#if DEBUG == 1
 	std::cerr << "preceding_dollars_finder - start " << start << " end " << end << "\n";
 	#endif
 
-	std::cout << "preceding_dollars_finder - start " << start << " end " << end << "\n";
+	std::cerr << "preceding_dollars_finder - start " << start << " end " << end << "\n";
+
 	//IMPORTANTE SORT NECESSARIA?
 	rangeElement output;
-	output.startPosN = start;//provato a togliere il +1 a start e end
-	output.startPosNII = M_LF_Dollar_Input_interval[start];
+	output.startPosN = start;//provato a togliere il +1 a start e end, va fatto così
+	output.startPosNII = M_LF_Dollar_Input_interval[start];//?
 	output.endPosN = end;
-	output.endPosNII = M_LF_Dollar_Input_interval[end];
+	output.endPosNII = M_LF_Dollar_Input_interval[end];//?
 										
 	return output;
 }
@@ -595,16 +608,19 @@ void MOVE_EDSBWT::dollars_in_interval(deque<dataTypeNSeq> &d_out,dataTypeNChar i
 	dataTypeNSeq l = _RS_L_.rank('#',i);	
 	dataTypeNSeq u = _RS_L_.rank('#',j+1);
 	dataTypeNSeq index;
-	cout<<"ci sono "<<u-l<<"dollari nell'intervallo l="<<l<<", u="<<u<<endl;
+	//cout<<"ci sono "<<u-l<<" dollari nell'intervallo l="<<i<<", u="<<j<<endl;
 
 	for (dataTypeNSeq k = l; k < u; k++){
 
 		index = EOF_ID_Copy[k];
-		cout<<index<<endl;
+		//cout<<index<<endl;
 
 		if(index > first_symbol_index){	
-			d_out.push_back(index);
-			
+			if (std::find(d_out.begin(), d_out.end(), (dataTypeNSeq) index) != d_out.end()){//occhio che d contiene ushort (index sono uint invece)
+			cout<<"dollar already in pile, skip"<<endl;
+			return;
+			}
+			d_out.push_back(index);	
 		}
 	}
 	
@@ -621,13 +637,29 @@ int MOVE_EDSBWT::recoverInfo(string filename) {
         exit (EXIT_FAILURE);
     }
 	//Read BWT-length, num. sequences and sizeAlpha
-    fread(&lengthTot_plus_eof,sizeof(dataTypeNChar),1,InfoFile); //check ==1 with assert the 3 reads
-    fread(&nText,sizeof(dataTypeNSeq),1,InfoFile);
-    fread(&sizeAlpha,sizeof(dataTypedimAlpha),1,InfoFile);
+    int res = fread(&lengthTot_plus_eof,sizeof(dataTypeNChar),1,InfoFile); 
+	if (res!=1){
+		std::cerr << "Error reading lengthTot_plus_eof" << InfoFile << "." << std::endl;
+        exit (EXIT_FAILURE);
+	}
+    res = fread(&nText,sizeof(dataTypeNSeq),1,InfoFile);
+	if (res!=1){
+		std::cerr << "Error reading nText" << InfoFile << "." << std::endl;
+        exit (EXIT_FAILURE);
+	}
+    res = fread(&sizeAlpha,sizeof(dataTypedimAlpha),1,InfoFile);
+	if (res!=1){
+		std::cerr << "Error reading sizeAlpha" << InfoFile << "." << std::endl;
+        exit (EXIT_FAILURE);
+	}
 	//set alpha and alphaInverse
 	alphaInverse = new dataTypedimAlpha[sizeAlpha];
     for (dataTypedimAlpha i = 0; i < sizeAlpha; ++i){
-		fread(&(alphaInverse[i]), sizeof(dataTypedimAlpha), 1, InfoFile);//check assert ==1
+		res = fread(&(alphaInverse[i]), sizeof(dataTypedimAlpha), 1, InfoFile);
+		if (res!=1){
+		std::cerr << "Error reading alphaInverse" << InfoFile << "." << std::endl;
+        exit (EXIT_FAILURE);
+	}
 		alpha[alphaInverse[i]] = i;
 	}
 	
@@ -656,7 +688,7 @@ int MOVE_EDSBWT::recoverInfo(string filename) {
 			std::cerr << "Error loading bitvector from " << fileBitVector << std::endl;
 			exit (1);
 		}
-		free(fileBitVector);
+		delete [] fileBitVector;
 		rrr_vector<>::rank_1_type tmp(&EOFpos[j]);
 		EOFpos_rank.insert(EOFpos_rank.begin()+j,tmp);
 	}
@@ -684,7 +716,11 @@ int MOVE_EDSBWT::recoverInfo(string filename) {
 	
 	for(dataTypedimAlpha j=0; j<sizeAlpha; j++){
 		for (dataTypeNChar h = 0 ; h < numEOF[j]; h++) {
-            fread(&EOF_ID[j][h],sizeof(dataTypeNSeq),1,InfoFile);//check assert ==1
+            res = fread(&EOF_ID[j][h],sizeof(dataTypeNSeq),1,InfoFile);
+			if (res!=1){
+			std::cerr << "Error reading EOF_ID" << InfoFile << "." << std::endl;
+        	exit (EXIT_FAILURE);
+			}
 			num_of_eof++;
         }
 	}
@@ -701,7 +737,8 @@ int MOVE_EDSBWT::recoverInfo(string filename) {
         }
 	}
 
-	free(numEOF);
+	//free(numEOF);
+	delete[] numEOF;
 	
     //Read tableOcc from FileInfo
 	//set tableOcc
@@ -713,7 +750,11 @@ int MOVE_EDSBWT::recoverInfo(string filename) {
 	for (dataTypedimAlpha j = 0 ; j < sizeAlpha; j++) {
         //Update tableOcc with the symbols of the previous partial BWT files
         for (dataTypedimAlpha h = 0 ; h < sizeAlpha; h++) {
-            fread(&tableOcc[j][h],sizeof(dataTypeNChar),1,InfoFile);//check assert ==1
+            res = fread(&tableOcc[j][h],sizeof(dataTypeNChar),1,InfoFile);
+			if (res!=1){
+			std::cerr << "Error reading tableOcc" << InfoFile << "." << std::endl;
+        	exit (EXIT_FAILURE);
+	}
         }
     }
     fclose(InfoFile);

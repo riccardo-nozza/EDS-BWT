@@ -28,7 +28,11 @@ MOVE_EDSBWTSearch.cpp
 Sorting.cpp
 #malloc_count/malloc_count.c
 )
+add_executable(build_MLF
+build_MLF.cpp
+)
 
 add_subdirectory(Move-r)
 
 target_link_libraries(MOVE_EDSBWTSearch PRIVATE sdsl divsufsort divsufsort64 dl move_r)  # Link required libraries
+target_link_libraries(build_MLF PRIVATE sdsl divsufsort divsufsort64 dl move_r)  # Link required libraries

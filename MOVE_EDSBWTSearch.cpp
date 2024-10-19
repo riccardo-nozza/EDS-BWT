@@ -90,7 +90,7 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 		fprintf(stderr, "##BEFORE select_1_type\nmalloc_count ### current peak: %zu\n##\n", malloc_count_peak());
 	#endif
 	bit_vector::select_1_type bsel_1(&rrrb);
-	first_symbol_index = bsel_1(2)-1; //IMPORTANTE CAMBIARE POI
+	first_symbol_index = bsel_1(2)-1; 
 
 
 	dataTypeNSeq count_found=0, count_not_found=0;
@@ -201,7 +201,7 @@ pos_t MOVE_EDSBWT::findInputInterval(uint32_t i){
 	return x-1;
 }
 
-void MOVE_EDSBWT::init_backward_search(rangeElement& firstInterval){//check dei parametri qui
+void MOVE_EDSBWT::init_backward_search(rangeElement& firstInterval){
 	firstInterval.startPosN = 0; //b
 	firstInterval.endPosN = n-1; //e
 	firstInterval.startPosNII = 0; //b', input interval of b
@@ -359,9 +359,7 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 
 		std::sort(vectRangeOtherPile.begin(),vectRangeOtherPile.end(),compare);
 
-		//print(vectRangeOtherPile);
-
-		//merge part 
+		//merge 
 		if (vectRangeOtherPile.size()>1){		
 		for (uint32_t i=1;i<vectRangeOtherPile.size();i++){
 			if ( (vectRangeOtherPile[i].startPosN == vectRangeOtherPile[i-1].endPosN +1)){
@@ -375,18 +373,10 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 			}
 		}
 
-		//print(vectRangeOtherPile);
-
 		#if DEBUG == 1
 		std::cerr << "\n Iteration: posSymb in Pattern = "  << (int) posSymb << " symbol "<< symbol  << "\t";
 		#endif
 	}
-		//assert(link(rb_1,bsel_1)==1);
-
-		//For each symbol in the kmer we have to update both vectRangeDollarPile (if not empty) and vectRangeOtherPile 
-
-//		std::cerr << "--------------------------------------backward search: the cycle for " << "symbol in position " << (int)posSymb << " took " << difftime(end,start) << " seconds\n\n";
-
 	return 1;
 }
 
@@ -394,7 +384,7 @@ bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vec
 
 	dataTypeNSeq sizeVectRange = vectRange.size();
 
-	bool res1=false; //da cambiare poi
+	bool res1=false;
 
 	cout<<"size:" <<sizeVectRange<<endl;
 
@@ -403,7 +393,7 @@ bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vec
 		bool res = updateSingleInterval(sym,vectRange[k]);
 		//cout<<"Lettera "<<sym<<"presente nell'intervallo "<	<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl;
 		if (!res) {
-			cout<<"Lettera "<<sym<<"non presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl; //direi di fare remove qui
+			cout<<"Lettera "<<sym<<"non presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl; //remove qui
 			//cout<<"rimozione intervallo"<<endl;
 			vectRange.erase(vectRange.begin()+k);
 			if (vectRange.size()==0 || k>=vectRange.size()){
@@ -443,7 +433,6 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 		e_ = _RS_L_.select(sym,_RS_L_.rank(sym,e_));
 		e = M_LF.p(e_+1)-1;
 	}   
-	//cout<<"b"<<b<<"e"<<e<<"b'"<<b_<<"e'"<<e_<<endl;	
 	
 
     // If the suffix array interval is empty, P does not occur in T, so return false.
@@ -596,9 +585,9 @@ rangeElement MOVE_EDSBWT::preceding_dollars_finder(dataTypeNSeq i){
 	//IMPORTANTE SORT NECESSARIA?
 	rangeElement output;
 	output.startPosN = start;//provato a togliere il +1 a start e end, va fatto così
-	output.startPosNII = M_LF_Dollar_Input_interval[start];//?
+	output.startPosNII = M_LF_Dollar_Input_interval[start];
 	output.endPosN = end;
-	output.endPosNII = M_LF_Dollar_Input_interval[end];//?
+	output.endPosNII = M_LF_Dollar_Input_interval[end];
 										
 	return output;
 }
@@ -616,7 +605,7 @@ void MOVE_EDSBWT::dollars_in_interval(deque<dataTypeNSeq> &d_out,dataTypeNChar i
 		//cout<<index<<endl;
 
 		if(index > first_symbol_index){	
-			if (std::find(d_out.begin(), d_out.end(), (dataTypeNSeq) index) != d_out.end()){//occhio che d contiene ushort (index sono uint invece)
+			if (std::find(d_out.begin(), d_out.end(), (dataTypeNSeq) index) != d_out.end()){
 			cout<<"dollar already in pile, skip"<<endl;
 			return;
 			}

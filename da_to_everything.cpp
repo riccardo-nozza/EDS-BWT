@@ -65,14 +65,14 @@ int get_char_start_pos(){
 int build_ilf(string fileName){
 
 	string runsAuxFileName = string(fileName) + "_runs.aux";
-	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "r");
+	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "rb");
 	if (runsAuxFile == NULL) {
 		std::cerr << "Error opening \"" << runsAuxFile << "\" file"<< std::endl;
 		exit (1);
 	}
 
 	string runsFileName = string(fileName) + "_runs.txt";
-	FILE *runsFile = fopen(runsFileName.c_str(), "w");
+	FILE *runsFile = fopen(runsFileName.c_str(), "wb");
 	if (runsFile == NULL) {
 		std::cerr << "Error opening \"" << runsFile << "\" file"<< std::endl;
 		exit (1);
@@ -80,23 +80,23 @@ int build_ilf(string fileName){
 
 	get_char_start_pos();
 
-	int initPos;
+	uint32_t initPos;
     dataTypedimAlpha let;
 
 
-	if(fscanf(runsAuxFile, "%d,%c\n", &initPos, &let) == EOF){
+	if(fscanf(runsAuxFile, "%u,%c\n", &initPos, &let) == EOF){
 		std::cout<<"File "<<runsAuxFileName<<" vuoto"<<std::endl;
 		exit(1);//scrivere su file solo il primo run	
 	}
 
 	fprintf(runsFile, "%d,%d\n", initPos, StartPosArray[(unsigned int)alpha[(unsigned int)let]]);
 
-	int initPos2;
+	uint32_t initPos2;
     dataTypedimAlpha let2;
 
-	int run_len;
+	uint32_t run_len;
 
-    while (fscanf(runsAuxFile, "%d,%c\n", &initPos2, &let2) != EOF) {
+    while (fscanf(runsAuxFile, "%u,%c\n", &initPos2, &let2) != EOF) {
 		run_len=initPos2-initPos;
 		StartPosArray[(unsigned int)alpha[(unsigned int)let]]+=run_len;
 		initPos=initPos2;
@@ -415,7 +415,7 @@ int remove_empty_symbols(string fileName){
 	}
 
 	string runsAuxFileName = string(fileName) + "_runs.aux";
-	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "w");
+	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "wb");
 	if (runsAuxFile == NULL) {
 		std::cerr << "Error opening \"" << runsAuxFile << "\" file"<< std::endl;
 		exit (1);
@@ -428,6 +428,7 @@ int remove_empty_symbols(string fileName){
 	dataTypeNChar numcharBWT=1;
 	char terminate_char=TERMINATE_CHAR;
 	uchar prev_char=TERMINATE_CHAR;
+	uint32_t pos=0;
 
 	while(numcharBWT>0){
 
@@ -440,7 +441,7 @@ int remove_empty_symbols(string fileName){
 			if (totalCharRead < toKeep){
 
 				if (prev_char!=BWTbuffer[i] || 	BWTbuffer[i]==EMPTY_CHAR || BWTbuffer[i]==TERMINATE_CHAR){//if char different from prv, there's a new run
-				    fprintf(runsAuxFile, "%d,%c\n", i, BWTbuffer[i]); //CHECK: aggiungere 1? Non penso ma occhio
+				    fprintf(runsAuxFile, "%d,%c\n", pos, BWTbuffer[i]); //CHECK: aggiungere 1? Non penso ma occhio
 			
 				}
 				prev_char=BWTbuffer[i];
@@ -457,6 +458,7 @@ int remove_empty_symbols(string fileName){
 			else{
 				numcharBWT=0;
 			}
+			pos++;
 		}
 	}
 

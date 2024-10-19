@@ -61,7 +61,7 @@ typedef unsigned long ulong;
  */
 
 // Type size for Sequences Length (in biologic case 100)
-#define dataTypeLengthSequences 1		
+#define dataTypeLengthSequences 2		
 
 // Type size for Number of Sequences in the input file
 #define dataTypeNumSeq 2		

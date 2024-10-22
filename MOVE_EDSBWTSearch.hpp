@@ -129,6 +129,8 @@ private:
     
     rsl_t _RS_bitvector_;//Rank-select data structure for bitvector
 
+    std::ofstream searchOutput;
+
 
 
 };

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <assert.h>
+#include <sys/time.h>
 
 #include "Parameters.h"
 #include "Sorting.h"
@@ -50,12 +51,10 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 	
 
 	string searchOutput_s = filepatterns + "output_M_LF.csv";
-	std::ofstream searchOutput;
 	searchOutput.open(searchOutput_s,ios::out);
 	if(searchOutput.is_open()){
 //			searchOutput << "Pattern_#" << "\t" << "word_index" << "\t" << "segment_index" << "\t" << "WordInSeg_index" << "\t" << "position_in_string\n";
-		searchOutput << "#Pat" << "\t" << "$_i" << "\t" << "D[i]" << "\t" << "S_j" << "\t" << "S_j[r]\n";
-		searchOutput.close();
+		searchOutput << "#Pat" << "\t" << "$_i" << "\t" << "D[i]" << "\t" << "S_j" << "\t" << "S_j[r] \n";
 	}
 	else{
 		cerr << "ERROR opening file " << searchOutput_s << " to write output\n";
@@ -100,39 +99,53 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 	dataTypeNChar i=0;
 	dataTypeNChar lenKmer=0;
 
+	/*#if DEBUG==1
+		clock_t startI,endI;
+		double difI;
+			time (&startI);
+		#endif*/
+	const clock_t begin_time = clock();
+
 	while (std::getline(InFileKmer, kmer)) {		
 		lenKmer = kmer.length();
-		cout << "Pattern: " << kmer << " of length " << lenKmer << endl;
+		//cout << "Pattern: " << kmer << " of length " << lenKmer << endl;
 
-		#if DEBUG==1
+		/*#if DEBUG==1
 		time_t startI,endI;
 		double difI;
 			time (&startI);
-		#endif
+		#endif*/
 		
 		if(backwardSearch(inputFileName.c_str(), filepatterns.c_str(), i+1, kmer, lenKmer) > 0){
 			//std::cerr << "1" << endl;
 			count_found++;
-			std::cerr<<"OCCORRENZA DI: "<<kmer<<" TROVATA"<<endl;
+			//std::cerr<<"OCCORRENZA DI: "<<kmer<<" TROVATA"<<endl;
 		}
 		else{
 			//std::cerr << "0" << endl;
 			count_not_found++;
-			std::cerr<<"OCCORRENZA DI: "<<kmer<<" NON TROVATA"<<endl;
+			//std::cerr<<"OCCORRENZA DI: "<<kmer<<" NON TROVATA"<<endl;
 		}
 		
-		#if DEBUG==1
-			time (&endI);
-			difI = difftime (endI,startI);
-			std::cerr << "End backwardSearch " << endI << " seconds\n";
-			std::cerr << "backwardSearch tooks " << difI << " seconds\n";
-		#endif
+			//std::cerr << "End backwardSearch " << endI << " seconds\n";
+			//std::cerr << "backwardSearch tooks " << difI << " seconds\n";
 		i++;
 	}
+
+	/*#if DEBUG==1
+			time (&endI);
+			difI = difftime (endI,startI);
+			long long milliseconds = (long long)(difI * 1000);
+	#endif
+	std::cerr << "Total time " << milliseconds<< " milliSeconds\n";		
+	std::cerr << "Total time " << difI<< " Seconds\n";*/	
+	std::cout << float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+
 
 	fprintf(stderr, "##\nmalloc_count ### current peak: %zu\n##\n", malloc_count_peak());
 
 	InFileKmer.close();
+	searchOutput.close();
 	
 	std::cerr << endl;
 	std::cerr << "count_found = " << count_found << endl;
@@ -194,7 +207,7 @@ int MOVE_EDSBWT::retrieve_MLF(std::string inputFileName){
 
 
 pos_t MOVE_EDSBWT::findInputInterval(uint32_t i){
-	pos_t x = 0;
+	pos_t x = M_LF_Dollar_Input_interval[i-1]; //great
 	while (i >= M_LF.p(x)) {
 		x++;
 	}
@@ -215,99 +228,21 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 	bool found_one_occ;
 
 #if DEBUG==1
-	std::cerr << "Pattern: " << kmer << "\n";
+	//std::cerr << "Pattern: " << kmer << "\n";
 #endif	
 
 	//Initialization
 	uchar symbol = kmer[lenKmer-1];
-	cout <<symbol<<endl;
+	//cout <<symbol<<endl;
 	vectRangeOtherPile.resize(1);
 
 	init_backward_search(vectRangeOtherPile[0]);
-
-	/*
-	uint32_t b_=_RS_L_.rank('A',0);
-	b_=_RS_L_.select('A',b_+1);
-	cout<<"positionII of first A "<<b_<<endl;
-	uint32_t b = M_LF.p(b_);
-	uint32_t e_=_RS_L_.rank('A',r_);
-	cout<<"number of A end"<<e_<<endl;
-	e_=_RS_L_.select('A',e_);
-	uint32_t e=M_LF.p(e_+1)-1;
-	cout<<"positionII of last A "<<e_<<endl;
-	M_LF.move(b,b_);
-		cout<<"new position of first A "<<b<<endl;
-	M_LF.move(e,e_);
-		cout<<"new position of last A "<<e<<endl;
-
-	b_=_RS_L_.rank('#',0);
-	b_=_RS_L_.select('#',b_+1);
-	cout<<"positionII of first # "<<b_<<endl;
-	b = M_LF.p(b_);
-	e_=_RS_L_.rank('#',r_);
-	cout<<"number of # end"<<e_<<endl;
-	e_=_RS_L_.select('#',e_);
-	cout<<"positionII of last # "<<e_<<endl;
-	e=M_LF.p(e_+1)-1;
-	M_LF.move(b,b_);
-		cout<<"new position of first # "<<b<<endl;
-	M_LF.move(e,e_);
-		cout<<"new position of last # "<<e<<endl;
-
-
-	b_=_RS_L_.rank('C',0);
-	b_=_RS_L_.select('C',b_+1);
-	cout<<"positionII of first C "<<b_<<endl;
-	b = M_LF.p(b_);
-	e_=_RS_L_.rank('C',r_);
-	cout<<"number of C end"<<e_<<endl;
-	e_=_RS_L_.select('C',e_);
-	cout<<"positionII of last C "<<e_<<endl;
-		e=M_LF.p(e_+1)-1;
-
-	M_LF.move(b,b_);
-		cout<<"new position of first C "<<b<<endl;
-	M_LF.move(e,e_);
-		cout<<"new position of last C "<<e<<endl;
-
-	b_=_RS_L_.rank('G',0);
-	b_=_RS_L_.select('G',b_+1);
-	cout<<"positionII of first G "<<b_<<endl;
-	b = M_LF.p(b_);
-	e_=_RS_L_.rank('G',r_);
-	cout<<"number of G end"<<e_<<endl;
-	e_=_RS_L_.select('G',e_);
-	cout<<"positionII of last G "<<e_<<endl;
-		e=M_LF.p(e_+1)-1;
-
-	M_LF.move(b,b_);
-		cout<<"new position of first G "<<b<<endl;
-	M_LF.move(e,e_);
-		cout<<"new position of last G "<<e<<endl;
-
-	b_=_RS_L_.rank('T',0);
-	b_=_RS_L_.select('T',b_+1);
-	cout<<"positionII of first T "<<b_<<endl;
-	b = M_LF.p(b_);
-	e_=_RS_L_.rank('T',r_);
-	cout<<"number of T end"<<e_<<endl;
-	e_=_RS_L_.select('T',e_);
-	cout<<"positionII of last T "<<e_<<endl;
-		e=M_LF.p(e_+1)-1;
-
-	M_LF.move(b,b_);
-		cout<<"new position of first T "<<b<<endl;
-	M_LF.move(e,e_);
-		cout<<"new position of last T "<<e<<endl;
-	
-	*/
-
 
 	res=backward_search_step(symbol, vectRangeOtherPile);
 	int link_res;
 
 	if (!res){
-		std::cout<<"pattern non presente"<<std::endl;
+		//std::cout<<"pattern non presente"<<std::endl;
 		return 0;
 	}
 	for (dataTypelenSeq posSymb=lenKmer-1; posSymb>0; posSymb--) {   //For each symbol of the kmer
@@ -333,14 +268,14 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 		if (!vectRangeDollarPile.empty()){
 			res = backward_search_step (symbol,vectRangeDollarPile);
 			if (!res){
-			std::cout<<"pattern non presente in vectRangeDollarPile"<<std::endl;
+			//std::cout<<"pattern non presente in vectRangeDollarPile"<<std::endl;
 			}
 			else found_one_occ=true;
 		}
 
 		res=backward_search_step(symbol,vectRangeOtherPile);
 		if (!res){
-			std::cout<<"pattern non presente in vectRangeOtherPile"<<std::endl;
+			//std::cout<<"pattern non presente in vectRangeOtherPile"<<std::endl;
 		}
 		else {
 			found_one_occ=true;
@@ -372,11 +307,54 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 				}
 			}
 		}
-
-		#if DEBUG == 1
-		std::cerr << "\n Iteration: posSymb in Pattern = "  << (int) posSymb << " symbol "<< symbol  << "\t";
-		#endif
 	}
+
+	// LOCATE
+	for (uint32_t i=0;i<vectRangeOtherPile.size();i++){
+		rangeElement interval = vectRangeOtherPile[i];
+		uint32_t prevII_copy = interval.startPosNII;
+		uint32_t prevII = interval.startPosNII;
+
+		uint32_t start = interval.startPosN;
+		uint32_t end = interval.endPosN;
+
+
+		for (uint32_t j=start;j<=end;j++){
+			uint32_t position = j;
+			uint32_t pos_in_string=0;
+
+			if (M_LF.p(prevII_copy+1)-position>0){//same input interval
+				//cout<<"same input interval"<<endl;
+			}
+			else {//next input interval
+				//cout<<"next input interval"<<endl;
+				prevII_copy=prevII_copy+1;
+				prevII = prevII_copy;
+			}
+			while (M_LF.L_(prevII)!=TERMINATE_CHAR){
+				M_LF.move(position,prevII);
+				pos_in_string++;
+				//cout<<position<<endl;
+				//cout<<prevII<<endl;
+			}	
+			uint32_t num_of_dollar = _RS_L_.rank('#',prevII);
+			uint32_t index = EOF_ID_Copy[num_of_dollar];	
+
+			//uint32_t dollar_II = M_LF_Dollar_Input_interval[index];
+			dataTypeNChar degenerate_symbol=_RS_bitvector_.rank(1,index+1);			
+			//cout<<degenerate_symbol<<endl;
+			dataTypeNChar start =_RS_bitvector_.select(1,degenerate_symbol);		
+			uint32_t offset_in_symbol = index - start;
+			
+			//dataTypeNChar end =_RS_bitvector_.select(1,a+1)-1;
+
+			searchOutput << n_kmer << "\t" << index << "\t" << degenerate_symbol << "\t" << offset_in_symbol << "\t" << pos_in_string << endl;
+			prevII = prevII_copy;
+			
+				}
+			}
+		
+
 	return 1;
 }
 
@@ -386,14 +364,14 @@ bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vec
 
 	bool res1=false;
 
-	cout<<"size:" <<sizeVectRange<<endl;
+	//cout<<"size:" <<sizeVectRange<<endl;
 
 	for (uint32_t k=0; k < sizeVectRange; k++) {	
-		cout<<vectRange[k].startPosN<<endl;
+		//cout<<vectRange[k].startPosN<<endl;
 		bool res = updateSingleInterval(sym,vectRange[k]);
 		//cout<<"Lettera "<<sym<<"presente nell'intervallo "<	<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl;
 		if (!res) {
-			cout<<"Lettera "<<sym<<"non presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl; //remove qui
+			//cout<<"Lettera "<<sym<<"non presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl; //remove qui
 			//cout<<"rimozione intervallo"<<endl;
 			vectRange.erase(vectRange.begin()+k);
 			if (vectRange.size()==0 || k>=vectRange.size()){
@@ -415,7 +393,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 	e = interval.endPosN;
 	b_ = interval.startPosNII;	
 	e_ = interval.endPosNII;
-	cout<<" start b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
+	//cout<<" start b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
 
    try{
 	if (!_RS_L_.contains(sym)) return false;
@@ -452,7 +430,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 			interval.endPosN=e;
 			interval.startPosNII=b_;	
 			interval.endPosNII=e_;	
-			cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
+			//cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
 
         } else {
             /* If \hat{b'}_i == \hat{e'}_i, but b'_i != e'_i, then e_i = b_i + e'_i - b'_i and therefore
@@ -470,7 +448,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 			interval.endPosN=e;
 			interval.startPosNII=b_;	
 			interval.endPosNII=e_;	
-			cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
+			//cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
         }
 
     } else {
@@ -480,7 +458,7 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 		interval.endPosN=e;
 		interval.startPosNII=b_;	
 		interval.endPosNII=e_;	
-		cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
+		//cout<<" end b= "<<b<<" e= "<<e<<" b'= "<<b_<<" e'="<<e_<<endl;	
     }
    } catch (const std::bad_optional_access& e) {
         // Handle the exception
@@ -540,7 +518,7 @@ int MOVE_EDSBWT::link(){
 		else {
 			vectRangeDollarPile.insert(vectRangeDollarPile.end(),current);
 		}
-		cout<<"start "<<current.startPosN<<" end "<<current.endPosN<<" startII "<<current.startPosNII<<" endII "<<current.endPosNII<<endl;
+		//cout<<"start "<<current.startPosN<<" end "<<current.endPosN<<" startII "<<current.startPosNII<<" endII "<<current.endPosNII<<endl;
 		dollars_in_interval(d,current.startPosNII,current.endPosNII);
 		//d.shrink_to_fit();
 	}
@@ -566,7 +544,7 @@ rangeElement MOVE_EDSBWT::preceding_dollars_finder(dataTypeNSeq i){
 		a=_RS_bitvector_.rank(1,i+1);
 	}
 
-	cout<<"# dollars before"<<i<<" = "<<a<<endl;
+	//cout<<"# dollars before"<<i<<" = "<<a<<endl;
 	dataTypeNChar start=_RS_bitvector_.select(1,a-1);
 
 	//dataTypeNChar start = bsel_1(a-1); //bsel_1(k) gives the index of the k-th 1. That is, the index of the first word of the k-th segment.
@@ -577,10 +555,10 @@ rangeElement MOVE_EDSBWT::preceding_dollars_finder(dataTypeNSeq i){
 		//cout<<"start"<<start<<" end"<<end<<endl;
 
 	#if DEBUG == 1
-	std::cerr << "preceding_dollars_finder - start " << start << " end " << end << "\n";
+	//std::cerr << "preceding_dollars_finder - start " << start << " end " << end << "\n";
 	#endif
 
-	std::cerr << "preceding_dollars_finder - start " << start << " end " << end << "\n";
+	//std::cerr << "preceding_dollars_finder - start " << start << " end " << end << "\n";
 
 	//IMPORTANTE SORT NECESSARIA?
 	rangeElement output;
@@ -603,12 +581,8 @@ void MOVE_EDSBWT::dollars_in_interval(deque<dataTypeNSeq> &d_out,dataTypeNChar i
 
 		index = EOF_ID_Copy[k];
 		//cout<<index<<endl;
-
+		
 		if(index > first_symbol_index){	
-			if (std::find(d_out.begin(), d_out.end(), (dataTypeNSeq) index) != d_out.end()){
-			cout<<"dollar already in pile, skip"<<endl;
-			return;
-			}
 			d_out.push_back(index);	
 		}
 	}

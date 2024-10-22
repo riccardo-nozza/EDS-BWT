@@ -13,15 +13,16 @@ using std::endl;
 #include "Parameters.h"
 
 
-int build_MLF(std::string inputFileName);
+int build_MLF(std::string inputFileName, uint16_t alpha);
 
 
 int main(int argc, char *argv[]){
 
-    if( argc != 2 ) {
-		std::cerr << "usage: " << argv[0] << " inputEBWTfileName" << std::endl;
+    if( argc != 3 ) {
+		std::cerr << "usage: " << argv[0] << " inputEBWTfileName a-balancingParameter" << std::endl;
 		std::cerr << "where:" << std::endl;
 		std::cerr << "  inputEBWTfile is the BWT filename without the extension .ebwt (and .ebwt.qs for the QS string)" << std::endl;
+		std::cerr << "  a-balancingParameter is the alpha balancing parameter of the M_LF data stucture" << std::endl;
         std::cerr << "  The M_LF data structure will be saved in inputEBWTfile_MLF.aux" << std::endl;
 		exit(1);
     }
@@ -29,13 +30,14 @@ int main(int argc, char *argv[]){
 	std::cout << "The input ebwt file is " << argv[1] << std::endl;
 
 	std::string InputFileName=argv[1];
+	uint16_t alpha = atoi(argv[2]);
 
     std::cout<<"BUILDING M_LF ... "<<std::endl;
 
     time_t startI,endI;
 		double difI;
 			time (&startI);
-    build_MLF(InputFileName);   
+    build_MLF(InputFileName, alpha);   
     	
         time (&endI);
         difI = difftime (endI,startI);  
@@ -47,7 +49,7 @@ int main(int argc, char *argv[]){
 }
 
 
-int build_MLF(std::string inputFileName){
+int build_MLF(std::string inputFileName, uint16_t alpha){
 
 	string ebwtFileName = string(inputFileName) + ".ebwt";
 	FILE *ebwtFile = fopen(ebwtFileName.c_str(), "r");
@@ -97,7 +99,7 @@ int build_MLF(std::string inputFileName){
     move_data_structure_l_<> M_LF;//M_LF data structure, initialized
 
 	M_LF=move_data_structure_l_<>(I_LF,n,{
-		.a = 6 //gestire a poi
+		.a = alpha //gestire a poi
     }, 8); 
 
     I_LF.clear();

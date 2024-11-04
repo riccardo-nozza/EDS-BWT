@@ -15,9 +15,6 @@
 using namespace std;
 using namespace sdsl;
 
-//std::vector<uint32_t> EOF_RANK;
-uint32_t* EOF_RANK; 
-
 uint32_t number_updates;
 uint32_t endpos;
 
@@ -29,8 +26,6 @@ std::vector<unsigned char> symbols = {
         static_cast<unsigned char>('T')
     };
 
-std::unordered_map<unsigned char, std::vector<uint32_t>> rank_results;
-std::unordered_map<unsigned char, std::vector<uint32_t>> select_results;
 
 
 
@@ -68,53 +63,6 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 	std::function<uint32_t(uint32_t)> read = [this](uint32_t i){return M_LF.L_(i);};//function that given an index i, returns M_LF.L_(i)
 	//useful for building rank-select data structure
 	_RS_L_=rsl_t(read,0,r_);
-
-
-	for (uchar sym : symbols) {
-        std::vector<uint32_t> ranks;
-        for (int b_ = 0; b_ <= r_; ++b_) {
-            int rank_value = _RS_L_.rank(sym, b_);
-            ranks.push_back(rank_value);
-        }
-        rank_results[sym] = ranks; // Store the ranks for the current symbol
-    }
-
-		for (dataTypedimAlpha j = 0 ; j < sizeAlpha; j++) {
-			std::vector<uint32_t> selects;
-			uchar sym = symbols[j];
-			cout<<sym<<endl;
-			uint32_t num_occ = 0;
-			num_occ = rank_results[sym][r_];
-			for (int b_ = 1; b_ <= num_occ; b_++) {
-            int select_value = _RS_L_.select(sym, b_);
-            selects.push_back(select_value);
-        	}
-        	select_results[sym] = selects; // Store the ranks for the current symbol
-    	}
-	
-	//EOF_RANK.reserve(n);
-	EOF_RANK= new uint32_t[n];
-
-	//migliorare questa roba
-	/*for(int i=0;i<r_;i++){
-		uint32_t num_dollars=_RS_L_.rank('#',M_LF.p(i));
-		for (uint32_t j=M_LF.p(i);j<M_LF.p(i+1);j++){
-		if (num_dollars>num_of_eof){
-			EOF_RANK[j]=num_of_eof;
-		}
-		else{
-		EOF_RANK[j]=num_dollars;
-		}
-		}
-		//cout<<i<<" "<<M_LF.p(i)<<" "<<num_dollars<<endl;
-
-		
-	}*/
-
-	//cout<<_RS_L_.rank('#',475017)<<endl;
-	//cout<<EOF_RANK[475017]<<endl;
-
-
 	
 	string searchOutput_s = filepatterns + "output_M_LF.csv";
 	searchOutput.open(searchOutput_s,ios::out);
@@ -370,17 +318,21 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 		//std::sort(vectRangeOtherPile.begin(),vectRangeOtherPile.end(),compare);
 
 		//merge 
-		if (vectRangeOtherPile.size()>1){		
+		if (vectRangeOtherPile.size()>1){
+			std::vector<rangeElement> mergedRanges;
+			mergedRanges.push_back(vectRangeOtherPile[0]);
 		for (uint32_t i=1;i<vectRangeOtherPile.size();i++){
-			if ( (vectRangeOtherPile[i].startPosN == vectRangeOtherPile[i-1].endPosN +1)){
-			vectRangeOtherPile[i-1].endPosN = vectRangeOtherPile[i].endPosN;
-			vectRangeOtherPile[i-1].endPosNII = vectRangeOtherPile[i].endPosNII;
-			vectRangeOtherPile.erase(vectRangeOtherPile.begin()+i);
-			if (vectRangeOtherPile.size()>0){
-				i--;
-					}
+			rangeElement& last = mergedRanges.back();
+			if ( (vectRangeOtherPile[i].startPosN == last.endPosN +1)){
+				last.endPosN = vectRangeOtherPile[i].endPosN;
+				last.endPosNII = vectRangeOtherPile[i].endPosNII;
+				}
+				//vectRangeOtherPile.erase(vectRangeOtherPile.begin()+i);
+			else {
+				mergedRanges.push_back(vectRangeOtherPile[i]);
 				}
 			}
+			vectRangeOtherPile = std::move(mergedRanges);
 		}
 	}
 	// LOCATE
@@ -492,21 +444,16 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 	if (!_RS_L_.contains(sym)) return false;
 
 	if (sym != M_LF.L_(b_)){
-		//b_ = _RS_L_.rank(sym,b_);
-		b_=rank_results[sym][b_];
-		//if (b_ == _RS_L_.frequency(sym)) return false;
-		if (b_ ==rank_results[sym][r_]) return false;
-		//b_ = _RS_L_.select(sym,b_+1);
-		b_=select_results[sym][b_];
+		b_ = _RS_L_.rank(sym,b_);
+		if (b_ == _RS_L_.frequency(sym)) return false;
+		b_ = _RS_L_.select(sym,b_+1);
 		if (b_ > e_) return false;
 		b = M_LF.p(b_);
 	}
 
     // Find the lexicographically largest suffix in the current suffix array interval that is prefixed by P[i]
     if (sym != M_LF.L_(e_)) {
-		e_=rank_results[sym][e_];
-		//e_ = _RS_L_.select(sym,e_);
-		e_=select_results[sym][e_-1];
+		e_ = _RS_L_.select(sym,_RS_L_.rank(sym,e_));
 		e = M_LF.p(e_+1)-1;
 	}   
 	
@@ -670,11 +617,7 @@ rangeElement MOVE_EDSBWT::preceding_dollars_finder(dataTypeNSeq i){
 void MOVE_EDSBWT::dollars_in_interval(deque<dataTypeNSeq> &d_out,dataTypeNChar i,dataTypeNChar j){
 
 	dataTypeNSeq l = _RS_L_.rank('#',i);
-	//cout<<i<<" "<<l<<" "<<EOF_RANK[i]<<endl;
 	dataTypeNSeq u = _RS_L_.rank('#',j+1);
-	//cout<<u<<" "<<EOF_RANK[j+1]<<endl;
-	//dataTypeNSeq l =EOF_RANK[i];
-	//dataTypeNSeq u =EOF_RANK[j+1];
 	dataTypeNSeq index;
 
 	//cout<<"ci sono "<<u-l<<" dollari nell'intervallo l="<<i<<", u="<<j<<endl;

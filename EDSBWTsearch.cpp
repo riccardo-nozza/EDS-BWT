@@ -53,6 +53,8 @@
 using namespace std;
 using namespace sdsl;
 
+uint32_t number_updates;
+
 EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads)
 {
     
@@ -201,6 +203,8 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 	std::string kmer; 
 	dataTypeNChar i=0;
 	dataTypeNChar lenKmer=0;
+		const clock_t begin_time = clock();
+
 	while (std::getline(InFileKmer, kmer)) {		
 		lenKmer = kmer.length();
 		#if DEBUG == 1
@@ -217,7 +221,7 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 		
 		
 		
-		
+		number_updates=0;
 		
 		if( backwardSearch(fileInput.c_str(), filepatterns.c_str(), i+1, kmer, lenKmer, rb_1, bsel_1) > 0){
 			//std::cerr << "1" << endl;
@@ -227,6 +231,8 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 			//std::cerr << "0" << endl;
 			count_not_found++;
 		}
+
+		cout<<"number of updates "<<number_updates<<endl;
 		
 		#if DEBUG==1
 			time (&endI);
@@ -237,7 +243,8 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 		i++;
 	}
 	InFileKmer.close();
-	
+		std::cout << "bs took:"<<float( clock () - begin_time ) /  CLOCKS_PER_SEC;
+
 	std::cerr << endl;
 	std::cerr << "count_found = " << count_found << endl;
 	std::cerr << "count_not_found = " << count_not_found << endl;
@@ -651,8 +658,9 @@ int EDSBWT::backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq 
 		std::cerr << "\n Iteration: posSymb in Pattern = "  << (int) posSymb << " symbol "<< symbol  << "\t";
 		std::cerr << "symbPile= "<< (char)alphaInverse[(int)symbPile]  << "\n";
 		#endif
-		
+		//const clock_t begin_time1 = clock();
 		assert(link(rb_1,bsel_1)==1);
+		//std::cout << "link took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
 
 		#if DEBUG == 1
 		cerr<<"backwardSearch - dopo link (including merge)"<<"\n";
@@ -666,10 +674,16 @@ int EDSBWT::backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq 
 
 		//For each symbol in the kmer we have to update both vectRangeDollarPile (if not empty) and vectRangeOtherPile 
 		
-		if (!vectRangeDollarPile.empty())
+		if (!vectRangeDollarPile.empty()){
+			//const clock_t begin_time1 = clock();
+			//cout<<"sizeee "<<vectRangeDollarPile.size()<<endl;
 			assert ( updateIntervals (vectRangeDollarPile, fileInput, fileOutDecode, symbol, 0) == 1);
+			//std::cout << "bs step took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
+			}
 
+		//const clock_t begin_time2 = clock();
 		assert ( updateIntervals (vectRangeOtherPile, fileInput, fileOutDecode, symbol, symbPile) == 1);
+		//std::cout << "bs step took:"<<float( clock () - begin_time2 ) /  CLOCKS_PER_SEC<<endl;
 		
 		//Append elements of vectRangeOtherPile to vectRangeDollarPile
 		vectRangeDollarPile.insert(std::end(vectRangeDollarPile), std::begin(vectRangeOtherPile), std::end(vectRangeOtherPile));
@@ -842,6 +856,7 @@ int EDSBWT::updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE 
 int EDSBWT::updateSingleInterval(std::vector<rangeElement> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, uchar symbol, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock) {
 				dataTypeNChar numBlock=0;
 				uchar foundSymbol = '\0';  //here, it is not useful
+				number_updates+=1;
 				
 				#if DEBUG == 1
 				std::cerr << "toRead of the vectRange[k].PosN " << toRead << "\n";
@@ -1067,7 +1082,9 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 				vectRange[k].startPosN ++;  //We must to sum 1 to first
 				
 				//END
+				//const clock_t begin_time3 = clock();
 				assert (updateSingleInterval(vectRange, InFileBWT, k, currentPile, symbol, counters, &numBlockCounter, &contInCurrentBlock, vectRange[k].endPosN, bufferBlock) == 1);
+				//std::cout << "single interval step took:"<<float( clock () - begin_time3 ) /  CLOCKS_PER_SEC<<endl;
 				//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
 				//Symbol is
 				//newSymb[vectTriple[k].seqN] = symbol;   //it is not useful here
@@ -1096,7 +1113,9 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 		while (k< nIntervals) {
 			if (vectRange[k].startPosN <= vectRange[k].endPosN) {
 				//START
+				//const clock_t begin_time0 = clock();
 				assert (updateSingleInterval(vectRange, InFileBWT, k, currentPile, symbol, counters, &numBlockCounter, &contInCurrentBlock, vectRange[k].startPosN, bufferBlock) == 1);
+				//std::cout << "single interval step took:"<<float( clock () - begin_time0 ) /  CLOCKS_PER_SEC<<endl;
 				//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
 				//Symbol is
 				//newSymb[vectTriple[k].seqN] = symbol;   //it is not useful here
@@ -1109,7 +1128,9 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 				vectRange[k].startPosN ++;  //We must to sum 1 to first
 				
 				//END
+				//const clock_t begin_time1 = clock();
 				assert (updateSingleInterval(vectRange, InFileBWT, k, currentPile, symbol, counters, &numBlockCounter, &contInCurrentBlock, vectRange[k].endPosN, bufferBlock) == 1);
+				//std::cout << "single interval step took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
 				//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
 				//Symbol is
 				//newSymb[vectTriple[k].seqN] = symbol;   //it is not useful here
@@ -1122,6 +1143,7 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 			
 //			if ((vectRange[k].seqN == vectRange[k_tmp].seqN) ) {//&& (vectRange[k].pileN == vectRange[k_tmp].pileN) )  {					
 			MergeAndRemove(vectRange,k,k_tmp);
+			//cout<<"number of intervals "<<vectRange.size()<<endl;
 			//////////////////
 
 			

@@ -11,7 +11,7 @@ alpha=$5
 ###### ADD TEXT LENGTH N, NUMBER OF RUNS R,  R' 
 
 dataset_array=("100000" "200000" "400000" "800000" "1600000")
-pattern_length=("8" "16" "32" "64" "128" "256")
+pattern_length=("8" "16" "32" "64")
 ##########
 #needs to change the input data types (len seqs, BWT len, ...) in Parameters.h
 #dataset_array=("pdb_seqres.fa"); 

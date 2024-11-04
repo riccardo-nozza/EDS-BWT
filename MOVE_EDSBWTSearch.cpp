@@ -21,12 +21,6 @@ uint32_t* EOF_RANK;
 uint32_t number_updates;
 uint32_t endpos;
 
-std::vector<uint32_t> II;
-std::vector<uint32_t> OI;
-std::vector<int32_t> sums;
-std::vector<uint32_t> idx;
-
-
 std::vector<unsigned char> symbols = {
         static_cast<unsigned char>('#'),
         static_cast<unsigned char>('A'),
@@ -268,17 +262,6 @@ int MOVE_EDSBWT::retrieve_MLF(std::string inputFileName){
 
 	ifs_MLF.close();
 
-	no_init_resize(II,r_+1);
-	no_init_resize(OI,r_+1);
-	no_init_resize(sums,r_+1);
-	no_init_resize(idx,r_+1);
-	for (int i=0;i<=r_;i++){
-		II[i]=M_LF.p(i);
-		OI[i]=M_LF.q(i);
-		sums[i] = OI[i]-II[i];
-		idx[i] = M_LF.idx(i);
-	}
-
 	//build M_LF__Dollar_Input_Interval
 	M_LF_Dollar_Input_interval[0]=0;
 	for (uint32_t i=1;i<num_of_eof;i++){
@@ -292,7 +275,7 @@ int MOVE_EDSBWT::retrieve_MLF(std::string inputFileName){
 
 pos_t MOVE_EDSBWT::findInputInterval(uint32_t i){
 	pos_t x = M_LF_Dollar_Input_interval[i-1]; //great
-	while (i >= II[x]) {
+	while (i >= M_LF.p(x)) {
 		x++;
 	}
 	return x-1;
@@ -510,31 +493,21 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
 
 	if (sym != M_LF.L_(b_)){
 		//b_ = _RS_L_.rank(sym,b_);
-		//if (_RS_L_.rank(sym,b_)!=rank_results[sym][b_]) cout<<"errore 1"<<endl;
 		b_=rank_results[sym][b_];
 		//if (b_ == _RS_L_.frequency(sym)) return false;
 		if (b_ ==rank_results[sym][r_]) return false;
-		//cout <<_RS_L_.frequency(sym)<<"   "<<rank_results[sym][r_]<<endl;
 		//b_ = _RS_L_.select(sym,b_+1);
-		//cout<<b_<<" "<<_RS_L_.select(sym,b_+1)<<" "<<select_results[sym][b_]<<select_results[sym][b_+1]<<endl;
-		//if (_RS_L_.select(sym,b_+1)!=select_results[sym][b_]) cout<<"errore 2"<<endl;
 		b_=select_results[sym][b_];
 		if (b_ > e_) return false;
 		b = M_LF.p(b_);
-		//b=II[b_];
-		//cout<<b_<<" "<<M_LF.p(b_)<<"  "<<II[b_]<<endl;
 	}
 
     // Find the lexicographically largest suffix in the current suffix array interval that is prefixed by P[i]
     if (sym != M_LF.L_(e_)) {
-		//if (_RS_L_.rank(sym,e_)!=rank_results[sym][e_]) cout<<"errore 11"<<endl;
 		e_=rank_results[sym][e_];
 		//e_ = _RS_L_.select(sym,e_);
-		//cout<<e_<<" "<<_RS_L_.select(sym,e_)<<" "<<select_results[sym][e_]<<select_results[sym][e_-1]<<endl;
-		//if (_RS_L_.select(sym,e_)!=select_results[sym][e_-1]) cout<<"errore 22"<<endl;
 		e_=select_results[sym][e_-1];
 		e = M_LF.p(e_+1)-1;
-		//e = II[e_+1]-1;
 	}   
 	
 
@@ -547,14 +520,8 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
         if (b == e) {
             /* If \hat{b'}_i == \hat{e'}_i and b'_i = e'_i, then computing
             (e_i,\hat{e}_i) <- M_LF.move(e'_i,\hat{e'}_i) is redundant */
-            //M_LF.move(b,b_);
-			//b = OI[b_]+(b-II[b_]);
-			b = sums[b_]+b;
-			b_ = M_LF.idx(b_);
-			//b_ = idx[b_];
-			while (b >= II[b_+1]) {
-				b_++;
-			}
+            M_LF.move(b,b_);
+			
             e = b;
             e_ = b_;
 
@@ -569,14 +536,8 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
             \hat{b'}_i < \hat{e'}_i, hence we can compute \hat{e'}_i by setting e_ <- \hat{b'}_i = b_ and
             incrementing e_ until e < M_LF.p[e_+1] holds; This takes O(a) time because of the a-balancedness property */
             pos_t diff_eb = e - b;
-            //M_LF.move(b,b_);
-			//b = OI[b_]+(b-II[b_]);
-			b = sums[b_]+b;
-			b_ = M_LF.idx(b_);
-			//b_ = idx[b_];
-			while (b >= II[b_+1]) {
-				b_++;
-			}
+            M_LF.move(b,b_);
+			
             e = b + diff_eb;
             e_ = b_;
             
@@ -591,22 +552,10 @@ int MOVE_EDSBWT::updateSingleInterval(sym_t sym, rangeElement& interval){
         }
 
     } else {
-        //M_LF.move(b,b_);
-		//b = OI[b_]+(b-II[b_]);
-		b = sums[b_]+b;
-		b_ = M_LF.idx(b_);
-		//b_ = idx[b_];
-		while (b >= II[b_+1]) {
-			b_++;
-		}
-        //M_LF.move(e,e_);
-		//e = OI[e_]+(e-II[e_]);
-		e = sums[e_]+e;
-		e_ = M_LF.idx(e_);
-		//e_ = idx[e_];
-		while (e >= II[e_+1]) {
-			e_++;
-		}
+        M_LF.move(b,b_);
+		
+        M_LF.move(e,e_);
+		
 		interval.startPosN=b;	
 		interval.endPosN=e;
 		interval.startPosNII=b_;	

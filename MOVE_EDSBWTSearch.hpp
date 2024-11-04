@@ -44,7 +44,7 @@ using i_sym_t = constexpr_switch_t<
         constexpr_case<sizeof(char) == 4,    uint32_t>,
      /* constexpr_case<sizeof(sym_t) == 8, */ uint64_t
     >;
-using rsl_t = rank_select_support<char, uint64_t, true, true>; // type of RS_L'
+using rsl_t = rank_select_support<char, uint32_t, true, true>; // type of RS_L'
 
 
 

@@ -18,18 +18,6 @@ using namespace sdsl;
 uint32_t number_updates;
 uint32_t endpos;
 
-std::vector<unsigned char> symbols = {
-        static_cast<unsigned char>('#'),
-        static_cast<unsigned char>('A'),
-        static_cast<unsigned char>('C'),
-        static_cast<unsigned char>('G'),
-        static_cast<unsigned char>('T')
-    };
-
-
-
-
-
 bool compare(rangeElement a, rangeElement b);
 
 MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
@@ -122,7 +110,7 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 
 	while (std::getline(InFileKmer, kmer)) {		
 		lenKmer = kmer.length();
-		//cout << "Pattern: " << kmer << " of length " << lenKmer << endl;
+		cout << "Pattern: " << kmer << " of length " << lenKmer << endl;
 
 		/*#if DEBUG==1
 		time_t startI,endI;
@@ -133,12 +121,12 @@ MOVE_EDSBWT::MOVE_EDSBWT(string inputFileName, string filepatterns){
 		if(backwardSearch(inputFileName.c_str(), filepatterns.c_str(), i+1, kmer, lenKmer) > 0){
 			//std::cerr << "1" << endl;
 			count_found++;
-			//std::cerr<<"OCCORRENZA DI: "<<kmer<<" TROVATA"<<endl;
+			std::cerr<<"OCCORRENZA DI: "<<kmer<<" TROVATA"<<endl;
 		}
 		else{
 			//std::cerr << "0" << endl;
 			count_not_found++;
-			//std::cerr<<"OCCORRENZA DI: "<<kmer<<" NON TROVATA"<<endl;
+			std::cerr<<"OCCORRENZA DI: "<<kmer<<" NON TROVATA"<<endl;
 		}
 		
 			//std::cerr << "End backwardSearch " << endI << " seconds\n";
@@ -260,7 +248,7 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 	//std::cout << "bs took:"<<float( clock () - begin_time ) /  CLOCKS_PER_SEC<<endl;
 
 	if (!res){
-		//std::cout<<"pattern non presente"<<std::endl;
+		std::cout<<"pattern non presente"<<std::endl;
 		return 0;
 	}
 	for (dataTypelenSeq posSymb=lenKmer-1; posSymb>0; posSymb--) {   //For each symbol of the kmer
@@ -291,9 +279,9 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 			//cout<<"dollar pile size after"<<vectRangeDollarPile.size()<<endl;
 			//std::cout << "bs took:"<<float( clock () - begin_time0 ) /  CLOCKS_PER_SEC<<endl;
 			if (!res){
-			//std::cout<<"pattern non presente in vectRangeDollarPile"<<std::endl;
+				std::cout<<"pattern non presente in vectRangeDollarPile"<<std::endl;
 			}
-			else found_one_occ=true;
+			else found_one_occ = true;
 		}
 
 		const clock_t begin_time1 = clock();
@@ -302,7 +290,7 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 		//cout<<"other pile size after"<<vectRangeOtherPile.size()<<endl;
 		//std::cout << "bs took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
 
-		if (res) found_one_occ=true;
+		if (res) found_one_occ = true;
 
 		if (!found_one_occ){
 			return 0;
@@ -346,6 +334,8 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 		uint32_t end = interval.endPosN;
 
 		num_occ=num_occ+end-start+1;
+		//cout<<"num occ "<<num_occ<<endl;
+		
 
 		for (uint32_t j=start;j<=end;j++){
 			uint32_t position = j;
@@ -378,9 +368,9 @@ int MOVE_EDSBWT::backwardSearch(std::string fileInput, string fileOutDecode, dat
 				}
 			}
 
-			//cout<<"num occ "<<num_occ<<endl;
+			cout<<"num occ "<<num_occ<<endl;
 
-	return 1;
+	return num_occ;
 }
 
 bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vectRange){
@@ -401,7 +391,7 @@ bool MOVE_EDSBWT::backward_search_step(sym_t sym, std::vector<rangeElement>& vec
 		//cout<<vectRange[k].endPosN;
 		number_updates+=1;
 		//std::cout << "single interval step took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
-		//cout<<"Lettera "<<sym<<"presente nell'intervallo "<	<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl;
+		//cout<<"Lettera "<<sym<<" presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl;
 		/*if (!res){ //|| (k>0 && vectRange[k].startPosN<vectRange[k-1].startPosN)) {
 			//cout<<"Lettera "<<sym<<"non presente nell'intervallo "<<vectRange[k].startPosN<<" "<<vectRange[k].endPosN<<endl; //remove qui
 			//cout<<"rimozione intervallo"<<endl;

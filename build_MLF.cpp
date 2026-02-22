@@ -35,13 +35,12 @@ int main(int argc, char *argv[]){
     std::cout<<"BUILDING M_LF ... "<<std::endl;
 
     time_t startI,endI;
-		double difI;
-			time (&startI);
+	double difI;
+	time (&startI);
     build_MLF(InputFileName, alpha);   
     	
-        time (&endI);
-        difI = difftime (endI,startI);  
-        
+	time (&endI);
+	difI = difftime (endI,startI);      
 
     std::cout<<"M_LF BUILT in "<<difI<<" seconds;"<<std::endl;
 
@@ -91,10 +90,10 @@ int build_MLF(std::string inputFileName, uint16_t alpha){
 	fclose(runsFile);
 
     // Iterate through the vector
-	cout<<"size= "<<I_LF.size()<<endl;
+	//cout<<"size = "<<I_LF.size()<<endl;
 	I_LF.resize(z);
-	cout<<"new size= "<<I_LF.size()<<endl;
-	cout<<"actual size= "<<z<<endl;
+	cout<<"new size = "<<I_LF.size()<<endl;
+	cout<<"actual size = "<<z<<endl;
 
     move_data_structure_l_<> M_LF;//M_LF data structure, initialized
 
@@ -107,12 +106,12 @@ int build_MLF(std::string inputFileName, uint16_t alpha){
 
     uint32_t r_=M_LF.num_intervals();
 
-    for (uint32_t i=0;i<r_;i++){
-        //std::cout<<M_LF.p(i)<<" "<<M_LF.q(i)<<std::endl;
-    }
+    /*for (uint32_t i=0;i<r_;i++){
+        std::cout<<M_LF.p(i)<<" "<<M_LF.q(i)<<std::endl;
+    }*/
 
-	cout<<"r'="<<r_<<endl;
-	cout<<"n= "<<n<<endl;
+	cout<<"r' (size after balancing) = "<<r_<<endl;
+	//cout<<"n = "<<n<<endl;
 
 	string runsAuxFileName = string(inputFileName) + "_runs.aux";
 	FILE *runsAuxFile = fopen(runsAuxFileName.c_str(), "rb");
@@ -132,7 +131,7 @@ int build_MLF(std::string inputFileName, uint16_t alpha){
 		while(M_LF.p(i)<initPos){
 			M_LF.set_L_(i,prev);
 			//cout<<M_LF.p(i)<<" minore di "<<initPos<<endl;
-			//cout<<"old letter "<< prev << " = " << M_LF.L_(i-1)<<" new letter "<< M_LF.L_(i);
+			//cout<<"old letter "<< prev << " = " << M_LF.L_(i-1)<<" new letter "<< M_LF.L_(i)<<std::endl;
 			i++;
 		}
 

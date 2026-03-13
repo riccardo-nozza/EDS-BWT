@@ -76,7 +76,7 @@ for eds_file in ${dataset_directory}/datasets/*; do
     for length in ${pattern_length[@]}; do
 
             echo " Searching patterns in" ${dataset}"_"${length}.txt
-            (/usr/bin/time -v  ${tools_directory}/build/MOVE_EDSBWTSearch example_${dataset} "${dataset_directory}/randomPatterns/patterns_${length}.txt")  &> "${output_directory}/data_${dataset}_${length}.txt"
+            (/usr/bin/time -v  ${tools_directory}/build/MOVE_EDSBWTSearch example_${dataset} "${dataset_directory}/randomPatterns/patterns_${dataset}"_"${length}.txt")  &> "${output_directory}/data_${dataset}_${length}.txt"
             wait
 
             #CHECK EXECUTION
@@ -106,7 +106,8 @@ for eds_file in ${dataset_directory}/datasets/*; do
     for length in ${pattern_length[@]}; do
 
         echo " Searching patterns in" ${dataset}"_"${length}.txt
-        (/usr/bin/time -v  ${tools_directory}/EDSBWTsearch example_${dataset} "${dataset_directory}/randomPatterns/patterns_${length}.txt")  &> "${output_directory}/data_EDSBWT_${dataset}_${length}.txt"
+        echo "$patterns_${dataset}"_"${length}.txt"
+        (/usr/bin/time -v  ${tools_directory}/EDSBWTsearch example_${dataset} "${dataset_directory}/randomPatterns/patterns_${dataset}"_"${length}.txt")  &> "${output_directory}/data_EDSBWT_${dataset}_${length}.txt"
         #${tools_directory}/build/MOVE_EDSBWTSearch example_${dataset}_10 ${dataset_directory}/randomPatterns/${dataset}"_"${length}.txt &
         wait
 

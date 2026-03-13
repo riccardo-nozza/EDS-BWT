@@ -1,15 +1,21 @@
-output_dir="../randomPatterns"
-mkdir -p "$output_dir"
+#!/bin/bash
 
-for length in 8 16 32 64; do
-    file="${output_dir}/patterns_${length}.txt"
-    : > "$file"   # clear file
+DATASET_DIR=$1
+OUTPUT_DIR=$2
+SCRIPT=generate_Patterns_from_file.py
 
-    for i in $(seq 1 100); do
-        tr -dc 'ACGTN' < /dev/urandom | head -c $length >> "$file"
+for file in "$DATASET_DIR"/*.eds; do
 
-        if [ "$i" -lt 100 ]; then
-            echo >> "$file"
-        fi
+    base=$(basename "$file" .eds)
+
+    for length in 8 16 32; do
+
+        output="${OUTPUT_DIR}/patterns_${base}_${length}.txt"
+
+        python3 "$SCRIPT" "$file" "$output" -l "$length" -n 90
+
+        echo "Generated $output"
+
     done
+
 done

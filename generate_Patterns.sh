@@ -10,7 +10,7 @@ for file in "$DATASET_DIR"/*.msa; do
 
     for length in 8 16 32 64; do
 
-        output="${OUTPUT_DIR}/patterns_${base}_${length}.txt"
+        output="${OUTPUT_DIR}/patterns_${base}.msa_${length}.txt"
 
         python3 "$SCRIPT" "$file" "$output" -l "$length" -n 100
 

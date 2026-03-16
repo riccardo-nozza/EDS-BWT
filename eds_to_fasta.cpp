@@ -11,6 +11,7 @@ int main (int argc, char *argv[]){
 	if(argc != 3 ) {
 		std::cerr << "usage: " << argv[0] << " input output" << std::endl;
 		std::cerr << "input is the full filename, while output is the filename without any extension.\n";
+		exit(1);
 	}
 
 	char current;
@@ -18,7 +19,7 @@ int main (int argc, char *argv[]){
 	char null_char_input = EMPTY_CHAR_EDS;
 	char null_char=EMPTY_CHAR;	//must be lexicographically greater than every other letter in the input file.
 	bit_vector b;
-	int empty_counter=0;
+	dataTypeNChar empty_counter=0;
 
 
 	string inputName = argv[1];

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#./scriptTestDatasets ../dataset ../Tools ./out_table ../Tools ./out_BCRdata
+#./scriptTestDatasets ../dataset ../Tools ./out_table 8
 
 dataset_directory=$1;
 tools_directory=$2;
@@ -16,8 +16,8 @@ pattern_length=("8" "16" "32" "64")
 ##########
 
 echo -e "M_LF_build\ndataset,%CPU,WALL_CLOCK,RAM,n,r,r'" &> ${output_directory}/table_build_MLF.txt
-echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS" &> ${output_directory}/table_MLF_search.txt
-echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS" &> ${output_directory}/table_EDSBWT_search.txt
+echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,FOUND,NOT_FOUND" &> ${output_directory}/table_MLF_search.txt
+echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,FOUND,NOT_FOUND" &> ${output_directory}/table_EDSBWT_search.txt
 
 for eds_file in ${dataset_directory}/datasets/*; do
 
@@ -28,7 +28,7 @@ for eds_file in ${dataset_directory}/datasets/*; do
   
     echo "Building EDS ..."
 
-    ${tools_directory}/EDS-BWTransform.sh "$dataset_directory/datasets/$dataset" example_${dataset} > /dev/null 2>&1 &
+    ${tools_directory}/EDS-BWTransform.sh "$dataset_directory/datasets/$dataset.eds" example_${dataset} 0 > /dev/null 2>&1 &
     wait
 
     #CHECK EXECUTION
@@ -85,17 +85,21 @@ for eds_file in ${dataset_directory}/datasets/*; do
             CPU=0
             CLOCK=0
             RAM=0
-            WALL_CLOCK_BS=0 
+            WALL_CLOCK_BS=0
+            FOUND=0
+            NOT_FOUND=0 
             else
             echo "    Done"
             CPU=$(grep "CPU" ${output_directory}/data_${dataset}"_"${length}.txt | cut -f 7 -d " ")
             CLOCK=$(grep "Elapsed" ${output_directory}/data_${dataset}"_"${length}.txt | cut -f 8 -d " ")
             RAM=$(grep "Maximum" ${output_directory}/data_${dataset}"_"${length}.txt | cut -f 6 -d " ")
             WALL_CLOCK_BS=$(grep "bs took:" ${output_directory}/data_${dataset}"_"${length}.txt | cut -f 2 -d " ")
+            FOUND=$(grep "count_found" ${output_directory}/data_${dataset}"_"${length}.txt | cut -f 3 -d " ")
+            NOT_FOUND=$(grep "count_not_found" ${output_directory}/data_${dataset}"_"${length}.txt | cut -f 3 -d " ")
             fi
 
             #STORE INFORMATION
-            echo "${dataset}"_"${length},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS}" >> ${output_directory}/table_MLF_search.txt
+            echo "${dataset}"_"${length},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS},${FOUND},${NOT_FOUND}" >> ${output_directory}/table_MLF_search.txt
 
             #cp ${output_directory}/data_${dataset}"_"${length}.txt ${output_dirStdERROUT}/data_RLO_${dataset}.txt
             rm "${output_directory}/data_${dataset}_${length}.txt"
@@ -118,16 +122,20 @@ for eds_file in ${dataset_directory}/datasets/*; do
         CLOCK=0
         RAM=0
         WALL_CLOCK_BS=0
+        FOUND=0
+        NOT_FOUND=0 
         else
         echo "    Done"
         CPU=$(grep "CPU" ${output_directory}/data_EDSBWT_${dataset}"_"${length}.txt | cut -f 7 -d " ")
         CLOCK=$(grep "Elapsed" ${output_directory}/data_EDSBWT_${dataset}"_"${length}.txt | cut -f 8 -d " ")
         RAM=$(grep "Maximum" ${output_directory}/data_EDSBWT_${dataset}"_"${length}.txt | cut -f 6 -d " ")
         WALL_CLOCK_BS=$(grep "bs took:" ${output_directory}/data_EDSBWT_${dataset}"_"${length}.txt | cut -f 2 -d " ")
+        FOUND=$(grep "count_found" ${output_directory}/data_EDSBWT_${dataset}"_"${length}.txt | cut -f 3 -d " ")
+        NOT_FOUND=$(grep "count_not_found" ${output_directory}/data_EDSBWT_${dataset}"_"${length}.txt | cut -f 3 -d " ")
         fi
 
         #STORE INFORMATION
-        echo "${dataset}"_"${length},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS}" >> ${output_directory}/table_EDSBWT_search.txt
+        echo "${dataset}"_"${length},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS},${FOUND},${NOT_FOUND}" >> ${output_directory}/table_EDSBWT_search.txt
 
         #cp ${output_directory}/data_${dataset}"_"${length}.txt ${output_dirStdERROUT}/data_RLO_${dataset}.txt
         rm "${output_directory}/data_EDSBWT_${dataset}_${length}.txt"
@@ -135,6 +143,6 @@ for eds_file in ${dataset_directory}/datasets/*; do
 
     done
 
-    rm ${output_directory}/example_*
+    rm example_*
 
 done

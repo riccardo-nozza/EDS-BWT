@@ -126,8 +126,9 @@ public:
 	
 	#if RECOVERBW==1
 		int findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, string fileInput,string fileOutDecode,dataTypeNSeq n_kmer,rank_support_v<1> &rb_1,bit_vector::select_1_type &bsel_1);
-		int updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock);
-		int findBlockToReadBWT(dataTypedimAlpha currentPile, dataTypeNChar *toRead, dataTypeNChar *numBlock);
+        //int   (std::vector<rangeElementBW> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock);
+		int updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, dataTypeNChar * counters,  dataTypeNChar toRead, uchar *bufferBlock);
+        int findBlockToReadBWT(dataTypedimAlpha currentPile, dataTypeNChar *toRead, dataTypeNChar *numBlock);
 		void printElementBW(std::vector<rangeElementBW> &vectRange);
 	#endif
 	void indices_of_dollars_in_interval(std::ostream& searchOutput,dataTypelenSeq symbPile, dataTypeNChar i, dataTypeNChar j, dataTypeNSeq n_kmer, dataTypeNChar occPos, rank_support_v<1> &rb_1, bit_vector::select_1_type &bsel_1);

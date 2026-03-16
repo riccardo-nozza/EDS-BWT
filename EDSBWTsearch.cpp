@@ -53,8 +53,6 @@
 using namespace std;
 using namespace sdsl;
 
-uint32_t number_updates;
-
 EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads)
 {
     
@@ -203,7 +201,8 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 	std::string kmer; 
 	dataTypeNChar i=0;
 	dataTypeNChar lenKmer=0;
-		const clock_t begin_time = clock();
+
+	const clock_t begin_time = clock();
 
 	while (std::getline(InFileKmer, kmer)) {		
 		lenKmer = kmer.length();
@@ -221,7 +220,7 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 		
 		
 		
-		number_updates=0;
+		
 		
 		if( backwardSearch(fileInput.c_str(), filepatterns.c_str(), i+1, kmer, lenKmer, rb_1, bsel_1) > 0){
 			//std::cerr << "1" << endl;
@@ -231,8 +230,6 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 			//std::cerr << "0" << endl;
 			count_not_found++;
 		}
-
-		cout<<"number of updates "<<number_updates<<endl;
 		
 		#if DEBUG==1
 			time (&endI);
@@ -243,8 +240,9 @@ EDSBWT::EDSBWT (string fileInput, string filepatterns, int mode, int num_threads
 		i++;
 	}
 	InFileKmer.close();
-		std::cout << "bs took:"<<float( clock () - begin_time ) /  CLOCKS_PER_SEC;
 
+	std::cout<< "bs took:"<<float(clock()-begin_time) /CLOCKS_PER_SEC;
+	
 	std::cerr << endl;
 	std::cerr << "count_found = " << count_found << endl;
 	std::cerr << "count_not_found = " << count_not_found << endl;
@@ -325,7 +323,7 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 				
 		#if DEBUG == 1
 		dataTypeNSeq numTotKmers = vectRange.size();
-		std::cerr << "findMultipleDollarsBackward: We want to compute the seqID of " << numTotKmers  << " sequences." << std::endl;
+		std::cerr << "findMultipleDollarsBackward: We want to compute the seqID of " << numTotKmers  << " intervals." << std::endl;
 		#endif
 		
 		std::vector< rangeElementBW > vectRangeCopy;
@@ -335,9 +333,10 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 	dataTypeNChar * countersDiff = new dataTypeNChar[sizeAlpha];  //it counts the number of each symbol into the i-Pile-BWT 
 	dataTypeNChar * countersStart = new dataTypeNChar[sizeAlpha];
 	dataTypeNChar * countersEnd = new dataTypeNChar[sizeAlpha];
-	
-	dataTypeNChar numBlockCounterStart = 0, numBlockCounterEnd= 0, numBlock=0;   //number of the blocks read
-	dataTypeNChar contInCurrentBlockStart = 0, contInCurrentBlockEnd= 0;    //number of the symbols read
+
+	dataTypeNChar  numBlock=0;   //number of the blocks read
+	//dataTypeNChar numBlockCounterStart = 0, numBlockCounterEnd= 0, numBlock=0;   //number of the blocks read
+	//dataTypeNChar contInCurrentBlockStart = 0, contInCurrentBlockEnd= 0;    //number of the symbols read
 		
 	uchar *bufferBlock = new uchar[DIMBLOCK];
 	uchar foundSymbol = '\0';  //here, it is not useful
@@ -376,10 +375,11 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 				countersStart[i]=0;
 				countersEnd[i]=0;
 			}
-			numBlockCounterStart = 0, numBlock=0;   //number of the blocks read
-			contInCurrentBlockStart = 0;    //number of the symbols read
-			numBlockCounterEnd = 0, numBlock=0;   //number of the blocks read
-			contInCurrentBlockEnd = 0;    //number of the symbols read
+			numBlock=0;
+			//numBlockCounterStart = 0, numBlock=0;   //number of the blocks read
+			//contInCurrentBlockStart = 0;    //number of the symbols read
+			//numBlockCounterEnd = 0, numBlock=0;   //number of the blocks read
+			//contInCurrentBlockEnd = 0;    //number of the symbols read
 			
 			if (vectRange[k].startPosN <= vectRange[k].endPosN) {
 				vectRange[k].startPosN --;   //So we compute rank until position First - 1
@@ -390,7 +390,7 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 					//Before, we find the block where toRead position is.
 					assert ( findBlockToReadBWT(currentPile, &toRead, &numBlock) == 1);
 					
-					//First time! Update counters con the symbols up to the previous block
+					//First time! Update counters with the symbols up to the previous block
 					if (numBlock > 0) {
 						for (dataTypedimAlpha r=0; r<sizeAlpha; r++)
 							countersStart[r] =  vectorOcc[currentPile][r][(numBlock)-1];   //vectorOcc is indexed by 0, so we have numBlock-1
@@ -413,8 +413,8 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 							#endif
 				assert (toRead <= numberRead);
 				
-				numBlockCounterStart=toRead;
-				contInCurrentBlockStart = numBlock;		
+				//numBlockCounterStart = numBlock;
+				//contInCurrentBlockStart = toRead;
 				#if DEBUG == 1				
 					std::cerr << "\t UPDATE: numBlockCounterStart " << numBlockCounterStart << " contInCurrentBlockStart " << contInCurrentBlockStart << "\n";
 					std::cerr << "countersStart:\t";
@@ -425,14 +425,19 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 				
 				//END
 				toRead = vectRange[k].endPosN;
-				if ( (dataTypeNChar)floor((long double)((toRead-1)/DIMBLOCK)) == numBlockCounterStart) {
-					for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
-						countersEnd[i] += countersStart[i];  //+1???
-					}
-					contInCurrentBlockEnd = contInCurrentBlockStart;
+
+				for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
+						countersEnd[i] = 0;
 				}
+				//Commented since countersEnd already computes its value independently from counterStart
+				//if ( (dataTypeNChar)floor((long double)((toRead-1)/DIMBLOCK)) == numBlockCounterStart) {
+				//	for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
+				//		countersEnd[i] += countersStart[i];  //+1???
+				//	}
+				//	contInCurrentBlockEnd = contInCurrentBlockStart;
+				//}
 				
-				assert (updateSingleIntervalBW(vectRange, InFileBWT, k, currentPile, countersEnd, &numBlockCounterEnd, &contInCurrentBlockEnd, toRead, bufferBlock) == 1);
+				assert (updateSingleIntervalBW(vectRange, InFileBWT, k, currentPile, countersEnd, toRead, bufferBlock) == 1);
 				#if DEBUG == 1				
 					std::cerr << "\t UPDATED: numBlockCounterEnd " << numBlockCounterEnd << " contInCurrentBlockEnd " << contInCurrentBlockEnd << "\n";
 					std::cerr << "countersEnd:\t";
@@ -442,12 +447,12 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 				#endif
 				
 				#if DEBUG == 1
-						std::cerr << "findMultipleDollarsBackward: counters (simboli presenti) countersDiff: \t";
+						std::cerr << "findMultipleDollarsBackward: counters (symbols read) countersDiff: \t";
 				#endif
 				
 				//Compute new positions
 				for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
-					countersDiff[i] =  countersEnd[i] - countersStart[i];  //+1???
+					countersDiff[i] =  countersEnd[i] - countersStart[i];
 					
 							#if DEBUG == 1
 								std::cerr << " " << countersDiff[i];
@@ -469,8 +474,8 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 						indices_of_dollars_in_interval(searchOutput, rangeEle.pileN, rangeEle.startPosN, rangeEle.endPosN, n_kmer, occPos, rb_1, bsel_1);
 
 						//seqID.push_back(rangeEle);
-						countersStart[0] = countersEnd[0];  //For the next iteration
-						countersEnd[0] = 0;
+						//countersStart[0] = countersEnd[0];  //For the next iteration
+						//countersEnd[0] = 0;
 				}
 				//For the other symbols
 				for (dataTypedimAlpha i = 1 ; i < sizeAlpha; i++) {
@@ -490,16 +495,19 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 								#endif
 								vectRangeCopy.insert(std::end(vectRangeCopy), rangeEle);
 							}
-							countersStart[i] = countersEnd[i];  //For the next iteration
+							countersStart[i] = 0;
+							//countersStart[i] = countersEnd[i];  //For the next iteration
 							countersEnd[i] = 0;
 				}
-				numBlockCounterStart = numBlockCounterEnd;
-				contInCurrentBlockStart = contInCurrentBlockEnd;
+				countersStart[0] = 0;
+				countersEnd[0] = 0;
+				//numBlockCounterStart = numBlockCounterEnd;
+				//contInCurrentBlockStart = contInCurrentBlockEnd;
 			}
 			/////////////////////
 			
 			#if DEBUG == 1
-			std::cerr << "-->Prima del WHILE, numBlockCounterStart " << numBlockCounterStart << " contInCurrentBlockStart: " << contInCurrentBlockStart << " countersStart:\n";
+			std::cerr << "--> Before WHILE, numBlockCounterStart " << numBlockCounterStart << " contInCurrentBlockStart: " << contInCurrentBlockStart << " countersStart:\n";
 			for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
 				std::cerr << " " << countersStart[i];
 			}
@@ -516,27 +524,30 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 						vectRange[k].startPosN --;   //So we compute rank until position First - 1
 						dataTypeNChar toRead = vectRange[k].startPosN;	
 
-						assert (updateSingleIntervalBW(vectRange, InFileBWT, k, currentPile, countersStart, &numBlockCounterStart, &contInCurrentBlockStart, toRead, bufferBlock) == 1);
+						assert (updateSingleIntervalBW(vectRange, InFileBWT, k, currentPile, countersStart, toRead, bufferBlock) == 1);
 						
 						//END
 						toRead = vectRange[k].endPosN;
-						if ( (dataTypeNChar)floor((long double)((toRead-1)/DIMBLOCK)) == numBlockCounterStart) {
-							for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
-								countersEnd[i] += countersStart[i];  //+1???
-							}
-							contInCurrentBlockEnd = contInCurrentBlockStart;
+						for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
+								countersEnd[i] = 0;
 						}
-						assert (updateSingleIntervalBW(vectRange, InFileBWT, k, currentPile, countersEnd, &numBlockCounterEnd, &contInCurrentBlockEnd, toRead, bufferBlock) == 1);
+						//Commented since countersEnd already computes its value independently from counterStart
+						//if ( (dataTypeNChar)floor((long double)((toRead-1)/DIMBLOCK)) == numBlockCounterStart) {
+						//	for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
+						//		countersEnd[i] += countersStart[i];  //+1???
+						//	}
+						//	contInCurrentBlockEnd = contInCurrentBlockStart;
+						//}
+						assert (updateSingleIntervalBW(vectRange, InFileBWT, k, currentPile, countersEnd, toRead, bufferBlock) == 1);
 						
 						for (dataTypedimAlpha i = 0 ; i < sizeAlpha; i++) {
-							countersDiff[i] =  countersEnd[i] - countersStart[i];  //+1???
+							countersDiff[i] =  countersEnd[i] - countersStart[i];
 						}
-						numBlockCounterStart = numBlockCounterEnd;
-						contInCurrentBlockStart = contInCurrentBlockEnd;
+						//numBlockCounterStart = numBlockCounterEnd;
+						//contInCurrentBlockStart = contInCurrentBlockEnd;
 						
 						//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
-						//Si potrebbe unire al precedente
-						if (countersDiff[0] > 0) { //Ci sono dei dollari, va chiamato link
+						if (countersDiff[0] > 0) {
 							rangeEle.startPosN = vectRange[k].startPosN + 1; //Avevamo sottratto 1
 							rangeEle.endPosN = vectRange[k].endPosN;
 							//rangeEle.seqN = vectRange[k].seqN;
@@ -546,8 +557,8 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 							indices_of_dollars_in_interval(searchOutput, rangeEle.pileN, rangeEle.startPosN, rangeEle.endPosN, n_kmer, occPos, rb_1, bsel_1);
 
 							//seqID.push_back(rangeEle);
-							countersStart[0] = countersEnd[0];  //For the next iteration
-							countersEnd[0] = 0;
+							//countersStart[0] = countersEnd[0];  //For the next iteration
+							//countersEnd[0] = 0;
 							
 						}
 						//For each other symbol in the range
@@ -566,11 +577,14 @@ int EDSBWT::findMultipleDollarsBackward(std::vector<rangeElementBW> &vectRange, 
 								//rangeEle.seqN = vectRange[k].seqN;
 								vectRangeCopy.insert(std::end(vectRangeCopy), rangeEle);
 							}
-							countersStart[i] = countersEnd[i];  //For the next iteration
+							//countersStart[i] = countersEnd[i];  //For the next iteration
+							countersStart[i] = 0;
 							countersEnd[i] = 0;
 						}
-						numBlockCounterStart = numBlockCounterEnd;
-						contInCurrentBlockStart = contInCurrentBlockEnd;				
+						countersStart[0] = 0;
+						countersEnd[0] = 0;
+						//numBlockCounterStart = numBlockCounterEnd;
+						//contInCurrentBlockStart = contInCurrentBlockEnd;				
 					}
 					
 				k++;
@@ -658,12 +672,11 @@ int EDSBWT::backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq 
 		std::cerr << "\n Iteration: posSymb in Pattern = "  << (int) posSymb << " symbol "<< symbol  << "\t";
 		std::cerr << "symbPile= "<< (char)alphaInverse[(int)symbPile]  << "\n";
 		#endif
-		//const clock_t begin_time1 = clock();
+		
 		assert(link(rb_1,bsel_1)==1);
-		//std::cout << "link took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
 
 		#if DEBUG == 1
-		cerr<<"backwardSearch - dopo link (including merge)"<<"\n";
+		cerr<<"backwardSearch - after link (including merge)"<<"\n";
 		print_interval_number();
 		cerr << "vectRangeDollarPile (computed): ";
 		print(vectRangeDollarPile);		
@@ -674,16 +687,10 @@ int EDSBWT::backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq 
 
 		//For each symbol in the kmer we have to update both vectRangeDollarPile (if not empty) and vectRangeOtherPile 
 		
-		if (!vectRangeDollarPile.empty()){
-			//const clock_t begin_time1 = clock();
-			//cout<<"sizeee "<<vectRangeDollarPile.size()<<endl;
+		if (!vectRangeDollarPile.empty())
 			assert ( updateIntervals (vectRangeDollarPile, fileInput, fileOutDecode, symbol, 0) == 1);
-			//std::cout << "bs step took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
-			}
 
-		//const clock_t begin_time2 = clock();
 		assert ( updateIntervals (vectRangeOtherPile, fileInput, fileOutDecode, symbol, symbPile) == 1);
-		//std::cout << "bs step took:"<<float( clock () - begin_time2 ) /  CLOCKS_PER_SEC<<endl;
 		
 		//Append elements of vectRangeOtherPile to vectRangeDollarPile
 		vectRangeDollarPile.insert(std::end(vectRangeDollarPile), std::begin(vectRangeOtherPile), std::end(vectRangeOtherPile));
@@ -765,8 +772,7 @@ int EDSBWT::backwardSearch(string fileInput, string fileOutDecode, dataTypeNSeq 
 }
 
 #if RECOVERBW==1
-int EDSBWT::updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock) {
-			
+int EDSBWT::updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, dataTypeNChar * counters,  dataTypeNChar toRead, uchar *bufferBlock) {			
 				dataTypeNChar numBlock=0;
 				uchar foundSymbol = '\0';  //here, it is not useful
 				
@@ -779,30 +785,9 @@ int EDSBWT::updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE 
 				}
 				//else toTead==0 --> numBlock=0
 		
-				
-				if (numBlock == *numBlockCounter) {
-					//We are in the same block where counter is computed
-					//counter is computed at the position contInCurrentBlock
-					//In bufferBlock we already have the symbols
-					//For each symbol in the buffer, it updates the number of occurrences into counters
-					for (dataTypeNChar r=(*contInCurrentBlock); r<toRead; r++)        //CONTROLLA *******************
-						counters[alpha[(unsigned int)bufferBlock[r]]]++;    //increment the number of letter symbol into counters
-									
-				}
-				else if (numBlock > *numBlockCounter) {
-					//We are in another block and we need to read a new block in the BWT
-					for (dataTypedimAlpha r=0; r<sizeAlpha; r++)
-						counters[r] =  vectorOcc[currentPile][r][(numBlock)-1];   //vectorOcc is indexed by 0, so we have numBlock-1
-					
-					fseek (InFileBWT, numBlock*DIMBLOCK, 0);
-			
-					
-					dataTypeNChar numberRead = rankManySymbols(*InFileBWT, counters, toRead, &foundSymbol, bufferBlock);
-					assert (toRead <= numberRead);  //2024-06-05
-				}
-				
-				*contInCurrentBlock=toRead;
-				*numBlockCounter = numBlock;
+				fseek (InFileBWT, numBlock*DIMBLOCK, 0);
+				dataTypeNChar numberRead = rankManySymbols(*InFileBWT, counters, toRead, &foundSymbol, bufferBlock);
+				assert (toRead <= numberRead); 
 										
 				#if DEBUG == 1				
 					std::cerr << "\n updateSingleIntervalBW UPDATE: numBlockCounter " << *numBlockCounter << " contInCurrentBlock(toRead) " << *contInCurrentBlock << "\n";				
@@ -856,7 +841,6 @@ int EDSBWT::updateSingleIntervalBW(std::vector<rangeElementBW> &vectRange, FILE 
 int EDSBWT::updateSingleInterval(std::vector<rangeElement> &vectRange, FILE *InFileBWT, dataTypeNSeq k, dataTypedimAlpha currentPile, uchar symbol, dataTypeNChar * counters, dataTypeNChar *numBlockCounter, dataTypeNChar * contInCurrentBlock, dataTypeNChar toRead, uchar *bufferBlock) {
 				dataTypeNChar numBlock=0;
 				uchar foundSymbol = '\0';  //here, it is not useful
-				number_updates+=1;
 				
 				#if DEBUG == 1
 				std::cerr << "toRead of the vectRange[k].PosN " << toRead << "\n";
@@ -1082,9 +1066,7 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 				vectRange[k].startPosN ++;  //We must to sum 1 to first
 				
 				//END
-				//const clock_t begin_time3 = clock();
 				assert (updateSingleInterval(vectRange, InFileBWT, k, currentPile, symbol, counters, &numBlockCounter, &contInCurrentBlock, vectRange[k].endPosN, bufferBlock) == 1);
-				//std::cout << "single interval step took:"<<float( clock () - begin_time3 ) /  CLOCKS_PER_SEC<<endl;
 				//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
 				//Symbol is
 				//newSymb[vectTriple[k].seqN] = symbol;   //it is not useful here
@@ -1113,9 +1095,7 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 		while (k< nIntervals) {
 			if (vectRange[k].startPosN <= vectRange[k].endPosN) {
 				//START
-				//const clock_t begin_time0 = clock();
 				assert (updateSingleInterval(vectRange, InFileBWT, k, currentPile, symbol, counters, &numBlockCounter, &contInCurrentBlock, vectRange[k].startPosN, bufferBlock) == 1);
-				//std::cout << "single interval step took:"<<float( clock () - begin_time0 ) /  CLOCKS_PER_SEC<<endl;
 				//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
 				//Symbol is
 				//newSymb[vectTriple[k].seqN] = symbol;   //it is not useful here
@@ -1128,9 +1108,7 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 				vectRange[k].startPosN ++;  //We must to sum 1 to first
 				
 				//END
-				//const clock_t begin_time1 = clock();
 				assert (updateSingleInterval(vectRange, InFileBWT, k, currentPile, symbol, counters, &numBlockCounter, &contInCurrentBlock, vectRange[k].endPosN, bufferBlock) == 1);
-				//std::cout << "single interval step took:"<<float( clock () - begin_time1 ) /  CLOCKS_PER_SEC<<endl;
 				//I have to update the value in vectTriple[k].posN, it must contain the position of the symbol in F
 				//Symbol is
 				//newSymb[vectTriple[k].seqN] = symbol;   //it is not useful here
@@ -1143,7 +1121,6 @@ int EDSBWT::updateIntervals(std::vector<rangeElement> &vectRange, string fileInp
 			
 //			if ((vectRange[k].seqN == vectRange[k_tmp].seqN) ) {//&& (vectRange[k].pileN == vectRange[k_tmp].pileN) )  {					
 			MergeAndRemove(vectRange,k,k_tmp);
-			//cout<<"number of intervals "<<vectRange.size()<<endl;
 			//////////////////
 
 			

@@ -1,15 +1,31 @@
 #!/bin/bash
 
-#eds_to_ebwt.sh NAMEFILE PATHTOOL
 
+BCRPATH="BCR_LCP_GSA"
 GSUFPATH="../../gsufsort"
+
 NAMEFILE=$1
 OUTPUT=$2
+BCR=$3
 
-./eds_to_fasta $NAMEFILE.eds $OUTPUT
+if [[ "$(tail -c 1 "$NAMEFILE")" != "}" ]]; then
+    echo "ERROR: file .eds must end with }"
+    exit 1
+fi
 
-$GSUFPATH/gsufsort $OUTPUT.fasta --da --bwt --output $OUTPUT.fasta
+./eds_to_fasta $NAMEFILE $OUTPUT
 
-./da_to_everything $OUTPUT
-
+if [ $BCR -eq 1 ]
+then
+    $BCRPATH/"BCR_LCP_GSA" $OUTPUT.fasta $OUTPUT
+	rm $OUTPUT.fasta
+	rm $OUTPUT.len
+	rm $OUTPUT.info
+	./EOFpos_to_everything $OUTPUT
+else
+$GSUFPATH/"gsufsort" $OUTPUT.fasta --da --bwt --output $OUTPUT
+	rm $OUTPUT.fasta
+	./da_to_everything $OUTPUT
+fi 
+#$GSUFPATH/gsufsort $OUTPUT.fasta --da --bwt --output $OUTPUT.fasta
 echo "File "$NAMEFILE" done."

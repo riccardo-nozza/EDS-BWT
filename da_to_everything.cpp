@@ -3,9 +3,7 @@
 #include <sdsl/bit_vectors.hpp>
 #include "Parameters.h"
 
-
-
-
+#define END_MARKER '#' //end-marker used for the string collection 
 
 using namespace std;
 using namespace sdsl;
@@ -18,9 +16,9 @@ dataTypedimAlpha *alphaInverse;  //Corresponding between alpha[i] and the symbol
 
 dataTypeNChar *StartPosArray;  //Char Starting positions, useful to build I_LF.
 
-dataTypeNChar buildFreq(string fileName);
+dataTypeNChar buildFreq(string fileName, dataTypeNChar BWT_seqs);
 int da_to_everything(string filename, dataTypeNChar BWT_length);
-int remove_empty_symbols(string inputName);
+dataTypeNChar remove_empty_symbols(string inputName);
 int build_ilf(string fileName);
 int get_char_start_pos();
 
@@ -38,8 +36,8 @@ int main(int argc, char *argv[]){
 	}
 	
 	string inputName = argv[1];	
-	remove_empty_symbols(inputName);
-	dataTypeNChar BWT_length = buildFreq(inputName);
+	dataTypeNChar BWT_seqs =remove_empty_symbols(inputName);
+	dataTypeNChar BWT_length = buildFreq(inputName,BWT_seqs);
 	da_to_everything(inputName, BWT_length);
 	build_ilf(inputName);
 
@@ -128,9 +126,8 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
 		}
 	}
 	
-
-	//apri il document array per leggerlo
-	string da_s = filename + ".fasta.4.da";
+	//Open document array
+	string da_s = filename + ".4.da";
 	FILE* da = fopen(da_s.c_str(),"rb");
 	if (da == NULL) {
 		std::cerr << "Error opening \"" << da_s.c_str() << "\" file"<< std::endl;
@@ -138,8 +135,8 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
 	}
 
 
-	//apri la ebwt per leggerla
-	//n.b. viene aperto il file che non contiene la coda di dollari relativi al simbolo di parola vuota, quindi avrà una lunghezza diversa dal document array.
+	//Open ebwt
+	//n.b. The file does not contain the tail, so the length is different from document array.
 	string bwt_s = filename + ".ebwt";
 	FILE* bwt = fopen(bwt_s.c_str(),"r");
 	if (bwt == NULL) {
@@ -282,8 +279,8 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
         cerr << "Error deleting file" << fastaFileName << endl;
     }
 
-	//Remove the auxiliary file .fasta.4.da
-    status = remove(da_s);
+	//Remove the auxiliary file .4.da
+	status = remove(da_s);
     if (status != 0) {
         cerr << "Error deleting file" << da_s << endl;
     }
@@ -301,7 +298,7 @@ int da_to_everything(string filename, dataTypeNChar BWT_length){
 
 
 
-dataTypeNChar buildFreq(string fileName) {
+dataTypeNChar buildFreq(string fileName, dataTypeNChar BWT_seqs) {
    
     //Open LCP and DA and BWT files
     string fnBWT = string(fileName) + ".ebwt";
@@ -339,7 +336,7 @@ dataTypeNChar buildFreq(string fileName) {
 			}
 	}
 
-	if(freq[TERMINATE_CHAR]==0){
+	if(freq[TERMINATE_CHAR]!= BWT_seqs){
 		std::cerr << "ERROR: The end-marker must be " << TERMINATE_CHAR << endl;
 		std::cerr << "If you want to use a different end-marker, set the parameter TERMINATE_CHAR in Parameters.h" << endl;
 		exit(1);
@@ -371,10 +368,11 @@ dataTypeNChar buildFreq(string fileName) {
 
 
 
-int remove_empty_symbols(string fileName){
+dataTypeNChar remove_empty_symbols(string fileName){
 
 	dataTypeNChar bwt_length;
 	dataTypeNChar empty_number;
+	dataTypeNChar numSeq=0;
 
 	//Open the file containing the number of symbols in the bwt and the number of empty-word symbols contained within
 	string emptyName = fileName+".empty.info";
@@ -399,7 +397,7 @@ int remove_empty_symbols(string fileName){
 	dataTypeNChar toKeep = bwt_length - empty_number;
 
 
-    string bwtFileName = string(fileName) + ".fasta.bwt";
+    string bwtFileName = string(fileName) + ".bwt";
     FILE *bwtFile = fopen(bwtFileName.c_str(), "r");
 	if (bwtFile == NULL) {
 		std::cerr << "Error opening \"" << bwtFileName << "\" file"<< std::endl;
@@ -449,6 +447,10 @@ int remove_empty_symbols(string fileName){
 				if (BWTbuffer[i] == EMPTY_CHAR){
 					fwrite(&(terminate_char), sizeof(dataTypedimAlpha), 1, ebwtFile);
 				}
+				else if (BWTbuffer[i] == END_MARKER){
+					fwrite(&(terminate_char), sizeof(dataTypedimAlpha), 1, ebwtFile);
+					numSeq++;
+				}
 				else{
 					fwrite(&(BWTbuffer[i]), sizeof(dataTypedimAlpha), 1, ebwtFile);
 				}
@@ -473,12 +475,12 @@ int remove_empty_symbols(string fileName){
         cerr << "Error deleting file" << emptyName << endl;
     }
 
-	//Remove the auxiliary file .fasta.bwt
+	//Remove the auxiliary file .bwt
     status = remove(bwtFileName);
     if (status != 0) {
         cerr << "Error deleting file" << bwtFileName << endl;
     }
 
 
-	return 1;
+	return numSeq + empty_number;
 }

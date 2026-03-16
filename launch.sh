@@ -101,6 +101,7 @@ for dataset in ${dataset_array[@]}; do
         #rm ${output_directory}/${dataset}"_"${length}.txtoutput_M_LF.csv
 
     done
+    exit
 
 
     for length in ${pattern_length[@]}; do

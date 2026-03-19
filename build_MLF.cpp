@@ -34,15 +34,17 @@ int main(int argc, char *argv[]){
 
     std::cout<<"BUILDING M_LF ... "<<std::endl;
 
-    time_t startI,endI;
-	double difI;
-	time (&startI);
+    //time_t startI,endI;
+	//double difI;
+	//time (&startI);
+	const clock_t begin_time = clock();
     build_MLF(InputFileName, alpha);   
     	
-	time (&endI);
-	difI = difftime (endI,startI);      
+	//time (&endI);
+	//difI = difftime (endI,startI);
+	std::cout << "M_LF build took: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC / 10<<std::endl;      
 
-    std::cout<<"M_LF BUILT in "<<difI<<" seconds;"<<std::endl;
+    //std::cout<<"M_LF BUILT in "<<difI<<" seconds;"<<std::endl;
 
     return 1;
 }

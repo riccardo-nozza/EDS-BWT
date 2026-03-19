@@ -15,7 +15,7 @@ pattern_length=("8" "16" "32" "64")
 #dataset_array=("pdb_seqres.fa"); 
 ##########
 
-echo -e "M_LF_build\ndataset,%CPU,WALL_CLOCK,RAM,n,r,r'" &> ${output_directory}/table_build_MLF.txt
+echo -e "M_LF_build\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,n,r,r'" &> ${output_directory}/table_build_MLF.txt
 echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,FOUND,NOT_FOUND" &> ${output_directory}/table_MLF_search.txt
 echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,FOUND,NOT_FOUND" &> ${output_directory}/table_EDSBWT_search.txt
 
@@ -51,6 +51,7 @@ for eds_file in ${dataset_directory}/datasets/*; do
     CPU=0
     CLOCK=0
     RAM=0
+    WALL_CLOCK_BS=0
     LENGTH=0
     RUNS=0
     R_=0 
@@ -59,6 +60,7 @@ for eds_file in ${dataset_directory}/datasets/*; do
     CPU=$(grep "CPU" ${output_directory}/data_${dataset}.txt | cut -f 7 -d " ")
     CLOCK=$(grep "Elapsed" ${output_directory}/data_${dataset}.txt | cut -f 8 -d " ")
     RAM=$(grep "Maximum" ${output_directory}/data_${dataset}.txt | cut -f 6 -d " ") 
+    WALL_CLOCK_BS=$(grep "M_LF build took:" ${output_directory}/data_${dataset}.txt | cut -f 4 -d " ")
     LENGTH=$(grep "text length" ${output_directory}/data_${dataset}.txt | cut -f 3 -d " ")
     RUNS=$(grep "new size" ${output_directory}/data_${dataset}.txt | cut -f 4 -d " ")
     R_=$(grep "r'" ${output_directory}/data_${dataset}.txt | cut -f 6 -d " ")
@@ -66,7 +68,7 @@ for eds_file in ${dataset_directory}/datasets/*; do
     fi
 
     #STORE INFORMATION
-    echo "${dataset},${CPU},${CLOCK},${RAM},${LENGTH},${RUNS},${R_}" >> ${output_directory}/table_build_MLF.txt
+    echo "${dataset},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS},${LENGTH},${RUNS},${R_}" >> ${output_directory}/table_build_MLF.txt
 
     wait
 

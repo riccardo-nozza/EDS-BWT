@@ -15,7 +15,7 @@ pattern_length=("8" "16" "32" "64")
 #dataset_array=("pdb_seqres.fa"); 
 ##########
 
-echo -e "M_LF_build\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,n,r,r'" &> ${output_directory}/table_build_MLF.txt
+echo -e "M_LF_build\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,n,r,r',DEG_SYMBOLS,STRINGS" &> ${output_directory}/table_build_MLF.txt
 echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,FOUND,NOT_FOUND" &> ${output_directory}/table_MLF_search.txt
 echo -e "MLF_search\ndataset,%CPU,WALL_CLOCK,RAM,WALL_CLOCK_BS,FOUND,NOT_FOUND" &> ${output_directory}/table_EDSBWT_search.txt
 
@@ -45,6 +45,7 @@ for eds_file in ${dataset_directory}/datasets/*; do
 
     (/usr/bin/time -v ${tools_directory}/build/build_MLF example_${dataset} ${alpha}) &> ${output_directory}/data_${dataset}.txt
 
+
     #CHECK EXECUTION
     if [ $? -eq 0 ]; then
     echo "  Command terminated by signal"
@@ -67,9 +68,16 @@ for eds_file in ${dataset_directory}/datasets/*; do
 
     fi
 
-    #STORE INFORMATION
-    echo "${dataset},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS},${LENGTH},${RUNS},${R_}" >> ${output_directory}/table_build_MLF.txt
+    python3 ../junctions/scripts/msatoeds/get_stats.py ${eds_file} eds &> ${output_directory}/stats_${dataset}.txt
+    echo "Getting stats"
 
+    echo "    Done"
+    DEG_SYMBOLS=$(grep "Number of segments:" ${output_directory}/stats_${dataset}.txt | cut -f 4 -d " ")
+    STRINGS=$(grep "Number of strings:" ${output_directory}/stats_${dataset}.txt | cut -f 4 -d " ")
+
+
+    #STORE INFORMATION
+    echo "${dataset},${CPU},${CLOCK},${RAM},${WALL_CLOCK_BS},${LENGTH},${RUNS},${R_},${DEG_SYMBOLS},${STRINGS}" >> ${output_directory}/table_build_MLF.txt
     wait
 
     #rm ${output_directory}/example_${dataset}*
